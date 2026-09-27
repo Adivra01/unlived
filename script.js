@@ -209,13 +209,32 @@
     else window.location.href = 'index.html#contact';
   });
 
-  $('#contact-form')?.addEventListener('submit', event => {
+  $('#contact-form')?.addEventListener('submit', async event => {
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
     const name = $('#name').value.trim();
     const email = $('#email').value.trim();
     const message = $('#message').value.trim();
+    const submit = $('button[type="submit"]', form);
+    const originalLabel = submit.innerHTML;
+    submit.disabled = true;
+    submit.innerHTML = 'Envoi en cours…';
+    if (window.supabase?.createClient && window.UNLIVED_SUPABASE_CONFIG) {
+      const client = window.supabase.createClient(window.UNLIVED_SUPABASE_CONFIG.url, window.UNLIVED_SUPABASE_CONFIG.publishableKey);
+      const {error} = await client.from('contact_messages').insert({name, email, message});
+      submit.disabled = false;
+      submit.innerHTML = originalLabel;
+      if (!error) {
+        form.reset();
+        announce('Ton message est bien arrivé. On revient vers toi dès que possible.');
+        return;
+      }
+      announce('Le message n’a pas pu être transmis. Ton application e-mail va prendre le relais.');
+    } else {
+      submit.disabled = false;
+      submit.innerHTML = originalLabel;
+    }
     const subject = encodeURIComponent(`Message de ${name} — site UNLIVED`);
     const body = encodeURIComponent(`${message}\n\n— ${name}\n${email}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;

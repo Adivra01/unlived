@@ -1,6 +1,6 @@
-# UNLIVED — site de présentation
+# UNLIVED — site de présentation et administration
 
-Site statique en français composé de trois pages (`index.html` pour l’accueil et la boutique, `histoire.html` pour le récit de marque, `produit.html` pour la fiche DAY ONE avec ses variantes), réalisé en HTML, CSS, JavaScript et GSAP 3 / ScrollTrigger, sans étape de compilation. Le hero lit en boucle le film `0926.mp4`, converti en H.264 sans piste son. Le bouton flottant lance le morceau Drive au clic. L’état de lecture et la position sont conservés lors du passage entre les pages du site ; la reprise automatique dépend des règles du navigateur. Le partage Drive doit autoriser la lecture à toute personne disposant du lien.
+Site en français composé des pages d’accueil (`index.html`), d’histoire (`histoire.html`), de produit (`produit.html`) et de l’espace d’administration (`admin.html`). Le site public reste en HTML, CSS et JavaScript avec GSAP 3 / ScrollTrigger, sans compilation. L’espace d’administration utilise Supabase Auth, la base de données PostgreSQL du projet UNLIVED et ses règles RLS. Les commandes sont préparées dans la base, mais le paiement en ligne n’est pas encore connecté.
 
 ## Aperçu local
 
@@ -10,6 +10,23 @@ Depuis ce dossier, lancer un serveur local :
 python3 -m http.server 8000
 ```
 
-Puis ouvrir http://localhost:8000.
+Puis ouvrir http://localhost:8000. L’admin est disponible sur http://localhost:8000/admin.html. Pour parcourir le tableau sans connexion, ouvrir http://localhost:8000/admin.html?preview=1 : cet aperçu ne montre que le catalogue public et ne permet aucune modification.
 
-Les photos et le film optimisés se trouvent dans `assets/`. GSAP et ses plugins sont chargés depuis le CDN jsDelivr ; une connexion Internet est nécessaire pour les animations GSAP et les polices. Les prix, stocks, politiques de livraison, avis et informations de paiement n’ayant pas été fournis, la fiche produit affiche les informations de prix, composition, avis et disponibilité comme à confirmer au lancement. La galerie comprend plusieurs photos et un emplacement prêt pour chaque vidéo produit. Le formulaire ouvre l’application e-mail de la personne, sans serveur d’envoi.
+Les photos et le film optimisés se trouvent dans `assets/`. Les dépendances de navigateur sont chargées depuis jsDelivr ; une connexion Internet est nécessaire pour Supabase, GSAP et les polices.
+
+## Première connexion admin
+
+1. Créer un compte e-mail + mot de passe dans **Authentication → Users** du projet Supabase.
+2. Ouvrir **SQL Editor**, remplacer l’adresse ci-dessous par celle du compte, puis exécuter la requête :
+
+```sql
+insert into public.admin_users (user_id)
+select id from auth.users
+where email = 'toi@unlived.co';
+```
+
+3. Se connecter sur `/admin.html` avec ce compte.
+
+Le fichier `supabase-config.js` contient l’URL du projet et sa clé **publishable**, destinée au navigateur. Aucune clé secrète ou `service_role` n’est exposée. La migration initiale est dans `supabase/migrations/` ; elle active RLS sur toutes les tables et réserve la gestion des commandes et messages aux identifiants présents dans `admin_users`.
+
+L’admin comprend le tableau de bord, le catalogue, les variantes et leur galerie (un lien par ligne, `.mp4` pour la vidéo), les commandes, les clients calculés depuis les commandes, la boîte de réception et les réglages d’accès. Le formulaire de contact enregistre ses messages dans Supabase, avec une ouverture de l’application e-mail en solution de repli. Les prix et stocks restent vides tant qu’ils ne sont pas confirmés. La boutique publique lit le catalogue actif depuis Supabase ; les commandes apparaîtront une fois un paiement connecté.

@@ -60,7 +60,7 @@
     ['tee-noir', 'Noir', 'swatch-black']
   ].map(([id, label, swatch]) => `<a class="product-variant ${id === currentId ? 'is-selected' : ''}" href="produit.html?article=${id}" ${id === currentId ? 'aria-current="page"' : ''}><i class="swatch ${swatch}" aria-hidden="true"></i><span>${label}</span></a>`).join('');
 
-  const entries = [...product.images, ...product.videos];
+  let entries = [...product.images, ...product.videos];
   const showEntry = (index) => {
     const entry = entries[index];
     galleryMain.replaceChildren();
@@ -125,4 +125,50 @@
     if (size) storage.set('unlived-waitlist-size', size);
     else storage.remove('unlived-waitlist-size');
   });
+
+  const productSlug = new URLSearchParams(window.location.search).get('product');
+  const variantSlug = new URLSearchParams(window.location.search).get('variant');
+  if (productSlug && variantSlug && window.supabase?.createClient && window.UNLIVED_SUPABASE_CONFIG) {
+    const client = window.supabase.createClient(window.UNLIVED_SUPABASE_CONFIG.url, window.UNLIVED_SUPABASE_CONFIG.publishableKey);
+    client.from('products').select('*, product_variants(*), product_media(*)').eq('slug',productSlug).eq('status','active').single().then(({data,error})=>{
+      if(error || !data)return;
+      const activeVariant = data.product_variants.find(item=>item.color_slug===variantSlug && item.is_available);
+      if(!activeVariant)return;
+      const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+      const variants = data.product_variants.filter(item=>item.is_available);
+      const label = activeVariant.color_name[0].toUpperCase()+activeVariant.color_name.slice(1);
+      const baseTitle = data.title.replace(/\s+[—–-]\s*(?:t-shirt|tee)$/i,'');
+      const shownTitle = `${baseTitle} — ${label}`;
+      document.title = `${shownTitle} | UNLIVED`;
+      document.querySelector('#product-title').textContent = shownTitle;
+      document.querySelector('#breadcrumb-product').textContent = `${data.category} ${activeVariant.color_name}`;
+      document.querySelector('.product-eyebrow').innerHTML = `<span class="gold-rule-small"></span> ${escapeHtml(data.collection)}`;
+      document.querySelector('.product-type').textContent = `${data.category} · ${label}`;
+      document.querySelector('.product-price-detail').textContent = data.price_cents == null ? 'Prix annoncé au lancement' : new Intl.NumberFormat('fr-FR',{style:'currency',currency:data.currency || 'EUR'}).format(data.price_cents/100);
+      const description = document.querySelectorAll('.product-description');
+      if(data.description) description[0].textContent = data.description;
+      document.querySelector('.product-footnote').textContent = data.price_cents == null ? 'Le prix sera confirmé avant l’ouverture des commandes.' : 'Prix indicatif de la pièce. Les conditions définitives seront affichées à l’ouverture des commandes.';
+      variantLinks.innerHTML = variants.map(item=>{
+        const selected=item.id===activeVariant.id;
+        const itemLabel=item.color_name[0].toUpperCase()+item.color_name.slice(1);
+        return `<a class="product-variant ${selected?'is-selected':''}" href="produit.html?product=${encodeURIComponent(data.slug)}&variant=${encodeURIComponent(item.color_slug)}" ${selected?'aria-current="page"':''}><i class="swatch" style="background:${escapeHtml(item.color_hex)}" aria-hidden="true"></i><span>${escapeHtml(itemLabel)}</span></a>`;
+      }).join('');
+      document.querySelector('#related-product').href = `produit.html?product=${encodeURIComponent(data.slug)}&variant=${encodeURIComponent(variants.find(item=>item.id!==activeVariant.id)?.color_slug || activeVariant.color_slug)}`;
+      document.querySelector('#related-image').src = data.product_media.find(item=>item.variant_id===variants.find(item=>item.id!==activeVariant.id)?.id && item.media_type==='image')?.url || data.product_media.find(item=>item.variant_id===activeVariant.id && item.media_type==='image')?.url || 'assets/atelier-blanc.webp';
+      document.querySelector('#related-image').alt = `${data.title} — autre couleur`;
+
+      const media = data.product_media.filter(item=>!item.variant_id || item.variant_id===activeVariant.id).sort((a,b)=>a.sort_order-b.sort_order);
+      if(media.length){
+        entries = media.map(item=>item.media_type==='video'
+          ? {type:'video',src:item.url,poster:media.find(candidate=>candidate.media_type==='image')?.url || 'assets/atelier-blanc.webp',alt:item.alt_text,label:'Le film éditorial'}
+          : {src:item.url,alt:item.alt_text});
+        thumbs.innerHTML = entries.map((entry,index)=>{
+          const isVideo=entry.type==='video';
+          return `<button class="gallery-thumb ${isVideo?'gallery-thumb-video':''}" type="button" data-index="${index}" aria-label="Voir ${escapeHtml(entry.alt || 'le média '+(index+1))}" aria-pressed="false"><img src="${escapeHtml(isVideo?entry.poster:entry.src)}" alt="" loading="lazy">${isVideo?'<span class="thumb-play" aria-hidden="true">▷</span><small>FILM</small>':''}</button>`;
+        }).join('');
+        showEntry(0);
+        document.querySelector('.gallery-note').innerHTML = '<span>✳</span> Les photos et films de cette pièce sont synchronisés avec le catalogue.';
+      }
+    });
+  }
 })();
