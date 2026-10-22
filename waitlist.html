@@ -44,7 +44,7 @@
             <input type="hidden" name="concept" id="waitlist-concept-select"><input type="hidden" name="selected_size" id="waitlist-size">
             <div class="waitlist-name-fields"><label>Prénom *<input name="first_name" maxlength="80" autocomplete="given-name" required placeholder="Ton prénom"></label><label>Nom *<input name="last_name" maxlength="100" autocomplete="family-name" required placeholder="Ton nom"></label></div>
             <label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="email" required placeholder="toi@exemple.com"></label>
-            <label>Téléphone <span class="optional-label">facultatif</span><input name="phone" type="tel" maxlength="40" autocomplete="tel" placeholder="Pour un éventuel message de lancement"></label>
+            <div class="waitlist-phone-field"><label for="waitlist-phone">Numéro de téléphone (facultatif)</label><input id="waitlist-phone" name="phone" type="tel" inputmode="tel" maxlength="40" autocomplete="tel" placeholder="Ex. +223 70 00 00 00"></div>
             <label class="waitlist-consent"><input type="checkbox" name="consent" required><span>J’accepte qu’UNLIVED conserve ces informations pour me tenir au courant du concept choisi. Je peux demander leur suppression à tout moment.</span></label>
             <button class="button button-dark" id="waitlist-submit" type="submit"><span>Rejoindre la liste d’intérêt</span><b></b></button>
             <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite"></p>

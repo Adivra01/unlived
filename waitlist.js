@@ -55,7 +55,7 @@
       const { error } = await client.from('launch_waitlist').insert(row);
       if (error) {
         if (error.code === '23505') setStatus(status, 'Cette adresse est déjà inscrite pour ce concept. Merci de ton intérêt.', true);
-        else setStatus(status, 'On n’a pas pu enregistrer ton inscription. Vérifie ta connexion puis réessaie.', true);
+        else setStatus(status, error.message || 'On n’a pas pu enregistrer ton inscription. Vérifie ta connexion puis réessaie.', true);
         submit.disabled = false;
         return;
       }

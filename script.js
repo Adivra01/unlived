@@ -94,16 +94,12 @@
     contact.addEventListener('submit',async event=>{
       event.preventDefault();if(!contact.reportValidity())return;
       const button=$('[type=submit]',contact),original=button.innerHTML,status=$('#contact-status');
-      button.disabled=true;button.textContent='Envoi en cours…';if(status)status.textContent='';
-      try{
-        const client=window.UNLIVEDCustomer?.client;
-        if(!client)throw Error('Unavailable');
-        const payload={name:$('#name').value.trim(),email:$('#email').value.trim(),message:$('#message').value.trim()};
-        if(!payload.name||!payload.message)throw Error('Empty');
-        const {error}=await client.from('contact_messages').insert(payload);if(error)throw error;
-        contact.reset();if(status){status.classList.remove('is-error');status.textContent='Ton message a bien été envoyé. Nous te répondrons à l’adresse indiquée.'}
-      }catch{if(status){status.classList.add('is-error');status.textContent='L’envoi n’a pas abouti. Ton message est conservé dans le formulaire : réessaie dans un instant.'}else announce('L’envoi n’a pas abouti. Réessaie dans un instant.')}
-      finally{button.disabled=false;button.innerHTML=original}
+      const name=$('#name').value.trim(),email=$('#email').value.trim(),message=$('#message').value.trim();
+      if(!name||!email||!message)return;
+      const subject=encodeURIComponent('Message depuis UNLIVED — '+name);
+      const body=encodeURIComponent(`Bonjour UNLIVED,\n\n${message}\n\n${name}\n${email}`);
+      window.location.href=`mailto:contact@unlived.club?subject=${subject}&body=${body}`;
+      if(status){status.classList.remove('is-error');status.textContent='Ton application e-mail va s’ouvrir. Vérifie le message, puis appuie sur Envoyer.'}
     });
   }
 
