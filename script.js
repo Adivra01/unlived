@@ -1,242 +1,144 @@
 (() => {
-  const $ = (selector, root = document) => root.querySelector(selector);
-  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const storage = {
-    get: key => { try { return sessionStorage.getItem(key); } catch { return null; } },
-    set: (key, value) => { try { sessionStorage.setItem(key, value); } catch {} },
-    remove: key => { try { sessionStorage.removeItem(key); } catch {} }
-  };
-  const toast = $('.toast');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let toastTimer;
-  const heroVideo = $('.hero-video');
-  const syncHeroPlayback = () => {
-    if (!heroVideo) return;
-    if (reducedMotion.matches) { heroVideo.pause(); return; }
-    heroVideo.play().catch(() => {});
-  };
-  if (heroVideo) {
-    if (heroVideo.readyState >= 2) syncHeroPlayback();
-    else heroVideo.addEventListener('canplay', syncHeroPlayback, {once: true});
-    heroVideo.addEventListener('timeupdate', () => {
-      if (!heroVideo.duration) return;
-      const progress = heroVideo.currentTime / heroVideo.duration;
-      const rail = $('.hero-rail-line i');
-      if (rail) rail.style.transform = `scaleY(${Math.max(.08, progress)})`;
-    });
-    window.addEventListener('resize', syncHeroPlayback);
-    reducedMotion.addEventListener?.('change', syncHeroPlayback);
+  const $ = (s, root = document) => root.querySelector(s);
+  const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const storage = {get: k => {try{return sessionStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch{}},remove:k=>{try{sessionStorage.removeItem(k)}catch{}}};
+  function announce(text) {
+    const target = $('.toast'); if (!target) return;
+    target.textContent = text; target.classList.add('show');
+    clearTimeout(announce.timer); announce.timer = setTimeout(()=>target.classList.remove('show'),4500);
   }
-  const announce = (message) => {
-    toast.textContent = message;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
-  };
-
-  const waitlistProduct = storage.get('unlived-waitlist-product');
-  const waitlistSize = storage.get('unlived-waitlist-size');
-  const contactMessage = $('#message');
-  if (waitlistProduct && contactMessage) {
-    contactMessage.value = `Bonjour UNLIVED,\n\nJ’aimerais être prévenu·e du lancement de « ${waitlistProduct} »${waitlistSize ? ` en taille ${waitlistSize}` : ''}.\n\nMerci !`;
-    storage.remove('unlived-waitlist-product');
-    storage.remove('unlived-waitlist-size');
-  }
-
-  const soundtrack = $('#brand-track');
-  const soundButton = $('#sound-toggle');
-  if (soundtrack && soundButton) {
-    soundtrack.volume = .48;
-    const savedSoundTime = Number(storage.get('unlived-sound-time'));
-    if (Number.isFinite(savedSoundTime) && savedSoundTime > 0) soundtrack.currentTime = savedSoundTime;
-    const setSoundState = (isPlaying) => {
-      soundButton.classList.toggle('is-playing', isPlaying);
-      soundButton.setAttribute('aria-pressed', String(isPlaying));
-      soundButton.setAttribute('aria-label', isPlaying ? 'Couper la bande-son' : 'Lancer la bande-son');
-      $('.sound-label', soundButton).innerHTML = `Bande-son <b>${isPlaying ? 'ON' : 'OFF'}</b>`;
-      storage.set('unlived-sound-playing', isPlaying ? 'on' : 'off');
+  // One owner for navigation on every public page, independent of Auth availability.
+  const menu = $('.menu-toggle'), nav = $('.main-nav');
+  if (menu && nav) {
+    const backdrop = document.createElement('button');
+    backdrop.className='nav-backdrop'; backdrop.tabIndex=-1; backdrop.setAttribute('aria-label','Fermer le menu');
+    document.body.append(backdrop);
+    const mobile = matchMedia('(max-width: 800px)');
+    const setMenu = open => {
+      menu.setAttribute('aria-expanded',String(open));
+      menu.setAttribute('aria-label',open?'Fermer le menu':'Ouvrir le menu');
+      nav.classList.toggle('open',open); document.body.classList.toggle('menu-open',open);
+      nav.inert=mobile.matches&&!open;
     };
-    soundButton.addEventListener('click', async () => {
-      if (!soundtrack.paused) { soundtrack.pause(); return; }
-      try {
-        await soundtrack.play();
-        setSoundState(true);
-      } catch {
-        setSoundState(false);
-        announce('Le fichier Drive ne peut pas être lu. Vérifie que le lien est accessible à toute personne disposant du lien.');
+    menu.addEventListener('click',()=>setMenu(menu.getAttribute('aria-expanded')!=='true'));
+    backdrop.addEventListener('click',()=>{setMenu(false);menu.focus()});
+    nav.addEventListener('click',event=>{if(event.target.closest('a'))setMenu(false)});
+    document.addEventListener('keydown',event=>{
+      if(menu.getAttribute('aria-expanded')!=='true')return;
+      if(event.key==='Escape'){setMenu(false);menu.focus()}
+      if(event.key==='Tab'){
+        const items=[menu,...$$('a',nav)],first=items[0],last=items.at(-1);
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
       }
     });
-    soundtrack.addEventListener('play', () => setSoundState(true));
-    soundtrack.addEventListener('pause', () => setSoundState(false));
-    soundtrack.addEventListener('timeupdate', () => storage.set('unlived-sound-time', String(soundtrack.currentTime)));
-    window.addEventListener('pagehide', () => {
-      storage.set('unlived-sound-playing', soundtrack.paused ? 'off' : 'on');
-      storage.set('unlived-sound-time', String(soundtrack.currentTime));
+    mobile.addEventListener('change',()=>setMenu(false)); setMenu(false);
+  }
+  const header=$('.site-header'); let scrollQueued=false;
+  const updateScroll=()=>{
+    header?.classList.toggle('is-scrolled',scrollY>40);
+    const bar=$('.reading-progress span'),max=document.documentElement.scrollHeight-innerHeight;
+    if(bar)bar.style.transform=`scaleX(${max>0?Math.min(1,scrollY/max):0})`;
+    scrollQueued=false;
+  };
+  addEventListener('scroll',()=>{if(!scrollQueued){scrollQueued=true;requestAnimationFrame(updateScroll)}},{passive:true});updateScroll();
+
+  const film=$('.hero-video'),filmButton=$('.film-toggle');
+  if(film){
+    let pausedByUser=reduce.matches,inViewport=true;
+    const sync=()=>{if(pausedByUser||!inViewport||document.hidden)film.pause();else film.play().catch(()=>{})};
+    const label=()=>{if(!filmButton)return;filmButton.setAttribute('aria-label',film.paused?'Lire le film':'Mettre le film en pause');$('[data-film-label]',filmButton).textContent=film.paused?'Lire le film':'Pause';filmButton.firstElementChild.textContent=film.paused?'▷':'Ⅱ'};
+    filmButton?.addEventListener('click',()=>{pausedByUser=!film.paused;sync()});
+    film.addEventListener('play',label);film.addEventListener('pause',label);
+    film.addEventListener('timeupdate',()=>{const rail=$('.hero-rail-line i');if(rail&&film.duration)rail.style.transform=`scaleY(${film.currentTime/film.duration})`});
+    film.addEventListener('error',()=>{if(filmButton)filmButton.hidden=true});
+    new IntersectionObserver(entries=>{inViewport=entries[0].isIntersecting;sync()},{threshold:.05}).observe(film);
+    document.addEventListener('visibilitychange',sync);
+    reduce.addEventListener('change',()=>{pausedByUser=reduce.matches;sync()});sync();label();
+  }
+
+  const track=$('#brand-track'),sound=$('#sound-toggle');
+  if(track&&sound){
+    let requested=false;track.volume=.45;
+    const soundState=playing=>{sound.classList.toggle('is-playing',playing);sound.setAttribute('aria-pressed',String(playing));sound.setAttribute('aria-label',playing?'Mettre la bande-son en pause':'Lancer la bande-son');$('.sound-label b',sound).textContent=playing?'ON':'OFF'};
+    track.addEventListener('loadedmetadata',()=>{const time=Number(storage.get('unlived-sound-time'));if(time>0&&time<track.duration)track.currentTime=time},{once:true});
+    sound.addEventListener('click',async()=>{
+      if(!track.paused){track.pause();return}
+      requested=true;sound.disabled=true;
+      try{await track.play()}catch{announce('La bande-son est indisponible pour le moment. Tu peux continuer ta visite.')}finally{sound.disabled=false}
     });
-    if (storage.get('unlived-sound-playing') === 'on') {
-      soundtrack.play().then(() => setSoundState(true)).catch(() => setSoundState(false));
-    }
-    soundtrack.addEventListener('error', () => {
-      setSoundState(false);
-      announce('La bande-son Drive est inaccessible pour le moment.');
+    track.addEventListener('play',()=>soundState(true));track.addEventListener('pause',()=>soundState(false));
+    track.addEventListener('error',()=>{soundState(false);if(requested)announce('La bande-son est indisponible pour le moment.')});
+    addEventListener('pagehide',()=>storage.set('unlived-sound-time',String(track.currentTime)));
+  }
+
+  // Filtering remains deterministic, even after the live catalog replaces the cards.
+  function filterCatalog(animate=false){
+    const active=$('.filter-tab.active'),filter=active?.dataset.filter||'all';
+    const cards=$$('#products .product-card');let visible=0;
+    cards.forEach(card=>{const show=filter==='all'||card.dataset.category===filter;card.hidden=!show;card.classList.remove('is-hidden');if(show)visible++});
+    $$('.filter-tab').forEach(tab=>tab.setAttribute('aria-pressed',String(tab===active)));
+    const count=$('.filter-tab[data-filter="all"] span');if(count)count.textContent=String(cards.length).padStart(2,'0');
+    const status=$('#catalog-status');if(status)status.textContent=`${visible} pièce${visible>1?'s':''} affichée${visible>1?'s':''}`;
+    if(animate&&window.gsap&&!reduce.matches)gsap.fromTo(cards.filter(c=>!c.hidden),{y:12,opacity:.45},{y:0,opacity:1,duration:.4,stagger:.06,overwrite:true});
+    window.ScrollTrigger?.refresh();
+  }
+  $$('.filter-tab').forEach(tab=>tab.addEventListener('click',()=>{$$('.filter-tab').forEach(t=>t.classList.toggle('active',t===tab));filterCatalog(true)}));
+  addEventListener('unlived:catalog-loaded',()=>filterCatalog());filterCatalog();
+
+  const contact=$('#contact-form');
+  if(contact){
+    const item=storage.get('unlived-waitlist-product'),size=storage.get('unlived-waitlist-size');
+    if(item){$('#message').value=`Bonjour UNLIVED,\n\nJ’aimerais recevoir les informations de lancement pour « ${item} »${size?` en taille ${size}`:''}.\n\nMerci !`;storage.remove('unlived-waitlist-product');storage.remove('unlived-waitlist-size')}
+    contact.addEventListener('submit',async event=>{
+      event.preventDefault();if(!contact.reportValidity())return;
+      const button=$('[type=submit]',contact),original=button.innerHTML,status=$('#contact-status');
+      button.disabled=true;button.textContent='Envoi en cours…';if(status)status.textContent='';
+      try{
+        const client=window.UNLIVEDCustomer?.client;
+        if(!client)throw Error('Unavailable');
+        const payload={name:$('#name').value.trim(),email:$('#email').value.trim(),message:$('#message').value.trim()};
+        if(!payload.name||!payload.message)throw Error('Empty');
+        const {error}=await client.from('contact_messages').insert(payload);if(error)throw error;
+        contact.reset();if(status){status.classList.remove('is-error');status.textContent='Ton message a bien été envoyé. Nous te répondrons à l’adresse indiquée.'}
+      }catch{if(status){status.classList.add('is-error');status.textContent='L’envoi n’a pas abouti. Ton message est conservé dans le formulaire : réessaie dans un instant.'}else announce('L’envoi n’a pas abouti. Réessaie dans un instant.')}
+      finally{button.disabled=false;button.innerHTML=original}
     });
   }
 
-  const hasGSAP = typeof window.gsap !== 'undefined';
-  if (hasGSAP) {
-    gsap.registerPlugin(ScrollTrigger);
-    document.documentElement.classList.add('js-motion');
-    const mm = gsap.matchMedia();
-
-    if (!reducedMotion.matches) {
-      // A quiet editorial opening, then the stills breathe like a temporary film loop.
-      const intro = gsap.timeline({defaults: {ease: 'power3.out'}});
-      intro.from('.hero-copy .eyebrow', {y: 16, autoAlpha: 0, duration: .7})
-        .from('.hero-title span, .hero-title em', {yPercent: 115, autoAlpha: 0, stagger: .16, duration: 1.05, ease: 'power4.out'}, '-=.28')
-        .from('.hero-description, .hero-down', {y: 20, autoAlpha: 0, stagger: .12, duration: .75}, '-=.48')
-        .from('.hero-rail, .hero-caption', {autoAlpha: 0, duration: .8}, '-=.4');
-
-      const heroVideo = $('.hero-video');
-      if (heroVideo) {
-        gsap.fromTo(heroVideo, {scale: 1.035}, {scale: 1.09, duration: 18, ease: 'none', repeat: -1, yoyo: true});
-      }
-
-      // Reveal with real depth on scroll: images drift at a different speed to their copy.
-      $$('.reveal').forEach((element, index) => {
-        gsap.fromTo(element, {autoAlpha: 0, y: 32, rotateX: 2}, {
-          autoAlpha: 1, y: 0, rotateX: 0, duration: .9, delay: (index % 3) * .07,
-          ease: 'power3.out',
-          scrollTrigger: {trigger: element, start: 'top 88%', once: true}
-        });
-      });
-      if (heroVideo) gsap.to(heroVideo, {yPercent: 7, ease: 'none', scrollTrigger: {trigger: '.hero-cinema', start: 'top top', end: 'bottom top', scrub: .7}});
-      if ($('.history-intro')) gsap.to('.history-intro > img', {yPercent: -9, scale: 1.1, ease: 'none', scrollTrigger: {trigger: '.history-intro', start: 'top top', end: 'bottom top', scrub: .8}});
-      if ($('.manifesto-image-wrap')) gsap.to('.manifesto-image-wrap img', {yPercent: -13, scale: 1.16, ease: 'none', scrollTrigger: {trigger: '.manifesto-image-wrap', start: 'top bottom', end: 'bottom top', scrub: .8}});
-      if ($('.quote-band')) gsap.to('.quote-band > img', {yPercent: -11, scale: 1.23, ease: 'none', scrollTrigger: {trigger: '.quote-band', start: 'top bottom', end: 'bottom top', scrub: .8}});
-      if ($('.campaign-photo')) gsap.to('.campaign-photo img', {yPercent: -12, scale: 1.17, ease: 'none', scrollTrigger: {trigger: '.campaign-photo', start: 'top bottom', end: 'bottom top', scrub: .7}});
-      if ($('.quote-content')) gsap.fromTo('.quote-content blockquote', {scale: .84, y: 45, autoAlpha: .35}, {scale: 1, y: 0, autoAlpha: 1, ease: 'none', scrollTrigger: {trigger: '.quote-band', start: 'top 80%', end: 'center center', scrub: .8}});
-      if ($('.lookbook-panel')) gsap.to('.lookbook-art img', {yPercent: -7, scale: 1.16, ease: 'none', scrollTrigger: {trigger: '.lookbook-panel', start: 'top bottom', end: 'bottom top', scrub: .7}});
-      if ($('.proof-strip')) gsap.fromTo('.proof-seal', {rotation: -28, scale: .65}, {rotation: 9, scale: 1, ease: 'none', scrollTrigger: {trigger: '.proof-strip', start: 'top 85%', end: 'center center', scrub: .7}});
-      ScrollTrigger.create({start: 0, end: 'max', onUpdate: self => gsap.set('.reading-progress span', {scaleX: self.progress})});
-
-      // The story pauses for a moment: three inner objections give way to a decision.
-      if ($('.direction-section')) mm.add('(min-width: 761px)', () => {
-        const steps = $$('.direction-step');
-        const images = $$('.direction-image');
-        gsap.set(steps.slice(1), {autoAlpha: 0, y: 20});
-        gsap.set(images.slice(1), {autoAlpha: 0, scale: .94, clipPath: 'inset(8% 8% 8% 8%)'});
-        const story = gsap.timeline({scrollTrigger: {
-          trigger: '.direction-section', start: 'top top', end: '+=190%', scrub: .8,
-          pin: '.direction-pin', pinSpacing: true, anticipatePin: 1, invalidateOnRefresh: true
-        }});
-        for (let i = 1; i < steps.length; i++) {
-          const at = (i - 1) * .9;
-          story.to(steps[i - 1], {autoAlpha: 0, y: -18, duration: .35}, at)
-            .to(steps[i], {autoAlpha: 1, y: 0, duration: .4}, at + .12)
-            .to(images[i - 1], {autoAlpha: 0, scale: .96, duration: .6}, at)
-            .to(images[i], {autoAlpha: 1, scale: 1, clipPath: 'inset(0% 0% 0% 0%)', duration: .7}, at + .08);
-          story.fromTo(images[i].querySelector('img'), {scale: 1.12}, {scale: 1, duration: .7}, at + .08)
-            .call(() => { $('.direction-photo-index b').textContent = String(i + 1).padStart(2, '0'); }, null, at + .08);
-        }
-        return () => story.scrollTrigger?.kill();
-      });
-
-      // A little tactile depth on product cards for mouse users only.
-      mm.add('(pointer: fine) and (min-width: 761px)', () => {
-        $$('.product-card').forEach(card => {
-          const image = $('.product-image-button img', card);
-          const moveX = gsap.quickTo(image, 'x', {duration: .5, ease: 'power3.out'});
-          const moveY = gsap.quickTo(image, 'y', {duration: .5, ease: 'power3.out'});
-          const scale = gsap.quickTo(image, 'scale', {duration: .5, ease: 'power3.out'});
-          card.addEventListener('pointermove', event => {
-            const rect = card.getBoundingClientRect();
-            const x = (event.clientX - rect.left) / rect.width - .5;
-            const y = (event.clientY - rect.top) / rect.height - .5;
-            moveX(x * 11); moveY(y * 9); scale(1.045);
-          });
-          card.addEventListener('pointerleave', () => { moveX(0); moveY(0); scale(1); });
-        });
-      });
-    } else {
-      // Reduced motion keeps the full story visible without pinned or looping movement.
-      gsap.set('.hero-scene', {autoAlpha: 1});
-      heroVideo?.pause();
-      gsap.set('.reveal', {autoAlpha: 1, y: 0, rotateX: 0});
-      gsap.set('.direction-step', {autoAlpha: 1, y: 0});
-      gsap.set('.direction-image', {autoAlpha: 0});
-      gsap.set('.direction-image:first-child', {autoAlpha: 1});
-      gsap.set('.reading-progress span', {scaleX: 0});
+  $$('input[type=password]').forEach(input=>{
+    const wrapper=document.createElement('span');wrapper.className='password-control';
+    input.replaceWith(wrapper);wrapper.append(input);
+    const toggle=document.createElement('button');toggle.type='button';toggle.className='password-toggle';toggle.textContent='Afficher';toggle.setAttribute('aria-label','Afficher le mot de passe');toggle.setAttribute('aria-pressed','false');wrapper.append(toggle);
+    toggle.addEventListener('click',()=>{const show=input.type==='password';input.type=show?'text':'password';toggle.textContent=show?'Masquer':'Afficher';toggle.setAttribute('aria-pressed',String(show));toggle.setAttribute('aria-label',show?'Masquer le mot de passe':'Afficher le mot de passe')});
+  });
+  // Progressive enhancement: content is visible when animation libraries are absent.
+  if(!window.gsap||!window.ScrollTrigger)return;
+  gsap.registerPlugin(ScrollTrigger);
+  const mm=gsap.matchMedia();
+  mm.add({desktop:'(min-width: 1000px)',mobile:'(max-width: 999px)',reduce:'(prefers-reduced-motion: reduce)'},context=>{
+    if(context.conditions.reduce)return;
+    const desktop=context.conditions.desktop;
+    if($('.hero-copy'))gsap.from('.hero-copy > *',{y:28,opacity:0,duration:1.1,stagger:.15,ease:'power3.out',clearProps:'all'});
+    $$('.reveal').filter(el=>!el.closest('.product-grid')).forEach(el=>gsap.from(el,{y:desktop?36:20,opacity:.2,duration:.85,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 94%',once:true},clearProps:'all'}));
+    if(desktop){
+      // Photos retain their full framing; only the hero video uses depth.
+      if($('.hero-scene'))gsap.fromTo('.hero-scene',{yPercent:-4.5,scale:1.12},{yPercent:4.5,ease:'none',scrollTrigger:{trigger:'.hero-cinema',start:'top bottom',end:'bottom top',scrub:1}});
+      if($('.editorial-intro h2'))gsap.from('.editorial-intro h2',{x:-35,ease:'none',scrollTrigger:{trigger:'.editorial-intro',start:'top bottom',end:'center center',scrub:1}});
+      if($('.invitation-orbit'))gsap.fromTo('.invitation-orbit',{scale:.65},{scale:1.2,ease:'none',scrollTrigger:{trigger:'.home-invitation',start:'top bottom',end:'bottom top',scrub:1}});
     }
-  } else {
-    // Graceful fallback if the CDN is unavailable.
-    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
-    }), {threshold: .12});
-    $$('.reveal').forEach(element => observer.observe(element));
-  }
-
-  // Mobile navigation.
-  const menuButton = $('.menu-toggle');
-  const nav = $('.main-nav');
-  menuButton.addEventListener('click', () => {
-    const expanded = menuButton.getAttribute('aria-expanded') === 'true';
-    menuButton.setAttribute('aria-expanded', String(!expanded));
-    nav.classList.toggle('open', !expanded);
   });
-  $$('.main-nav a').forEach(link => link.addEventListener('click', () => {
-    menuButton.setAttribute('aria-expanded', 'false');
-    nav.classList.remove('open');
-  }));
-
-  // Collection filters.
-  $$('.filter-tab').forEach(button => button.addEventListener('click', () => {
-    $$('.filter-tab').forEach(tab => tab.classList.toggle('active', tab === button));
-    const filter = button.dataset.filter;
-    $$('.product-card').forEach(card => {
-      const shouldHide = filter !== 'all' && card.dataset.color !== filter;
-      if (hasGSAP && !reducedMotion.matches) {
-        gsap.killTweensOf(card);
-        if (shouldHide) gsap.to(card, {autoAlpha: 0, scale: .97, duration: .22, onComplete: () => card.classList.add('is-hidden')});
-        else { card.classList.remove('is-hidden'); gsap.fromTo(card, {autoAlpha: 0, y: 16, scale: .98}, {autoAlpha: 1, y: 0, scale: 1, duration: .38, ease: 'power2.out'}); }
-      } else card.classList.toggle('is-hidden', shouldHide);
-    });
-  }));
-
-  $('.bag-button')?.addEventListener('click', () => {
-    announce('La collection sera bientôt disponible. Écris-nous pour être prévenu·e.');
-    const contact = $('#contact');
-    if (contact) setTimeout(() => contact.scrollIntoView({behavior: reducedMotion.matches ? 'auto' : 'smooth'}), 450);
-    else window.location.href = 'index.html#contact';
+  mm.add('(min-width: 1000px) and (min-height: 800px) and (prefers-reduced-motion: no-preference)',()=>{
+    const section=$('.direction-section');if(!section)return;
+    section.classList.add('is-pinned-story');
+    const steps=$$('.direction-step'),images=$$('.direction-image');
+    gsap.set(steps.slice(1),{autoAlpha:0,y:16});gsap.set(images.slice(1),{autoAlpha:0,scale:.95,rotation:3});
+    const timeline=gsap.timeline({scrollTrigger:{trigger:section,start:'top 78px',end:'+=1300',pin:'.direction-pin',scrub:1,invalidateOnRefresh:true,onUpdate:self=>{const index=Math.min(2,Math.floor(self.progress*3));$('.direction-photo-index b').textContent=String(index+1).padStart(2,'0')}}});
+    for(let i=1;i<3;i++)timeline.to(steps[i-1],{autoAlpha:0,y:-18,duration:.3},i-.2).to(steps[i],{autoAlpha:1,y:0,duration:.5},i).to(images[i-1],{scale:.92,rotation:-3,autoAlpha:0,duration:.7},i-.2).to(images[i],{autoAlpha:1,scale:1,rotation:0,duration:.8},i-.1);
+    timeline.to({}, {duration:.4});
+    return()=>{section.classList.remove('is-pinned-story');$('.direction-photo-index b').textContent='01'};
   });
-
-  $('#contact-form')?.addEventListener('submit', async event => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    if (!form.reportValidity()) return;
-    const name = $('#name').value.trim();
-    const email = $('#email').value.trim();
-    const message = $('#message').value.trim();
-    const submit = $('button[type="submit"]', form);
-    const originalLabel = submit.innerHTML;
-    submit.disabled = true;
-    submit.innerHTML = 'Envoi en cours…';
-    if (window.supabase?.createClient && window.UNLIVED_SUPABASE_CONFIG) {
-      const client = window.supabase.createClient(window.UNLIVED_SUPABASE_CONFIG.url, window.UNLIVED_SUPABASE_CONFIG.publishableKey);
-      const {error} = await client.from('contact_messages').insert({name, email, message});
-      submit.disabled = false;
-      submit.innerHTML = originalLabel;
-      if (!error) {
-        form.reset();
-        announce('Ton message est bien arrivé. On revient vers toi dès que possible.');
-        return;
-      }
-      announce('Le message n’a pas pu être transmis. Ton application e-mail va prendre le relais.');
-    } else {
-      submit.disabled = false;
-      submit.innerHTML = originalLabel;
-    }
-    const subject = encodeURIComponent(`Message de ${name} — site UNLIVED`);
-    const body = encodeURIComponent(`${message}\n\n— ${name}\n${email}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  });
+  document.fonts?.ready.then(()=>ScrollTrigger.refresh());
+  addEventListener('load',()=>ScrollTrigger.refresh(),{once:true});
 })();

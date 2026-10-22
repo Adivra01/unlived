@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#E8E4DC">
+  <meta name="robots" content="noindex, follow">
+  <meta name="description" content="Ton espace UNLIVED : favoris, commandes et informations de compte.">
+  <title>Mon compte | UNLIVED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="cart.css">
+  <link rel="stylesheet" href="account.css">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta name="color-scheme" content="dark">
+  <link rel="stylesheet" href="brand.css?v=20261020b">
+<link rel="stylesheet" href="i18n.css?v=20261019">
+<script defer src="i18n.js?v=20261020"></script>
+<link rel="stylesheet" href="business.css?v=20261020b"></head>
+<body class="account-page">
+  <a class="skip-link" href="#main-content">Aller au contenu</a>
+  <div class="reading-progress" aria-hidden="true"><span></span></div>
+  <div class="announcement"><span>ACTE I: DAY ONE — Le premier chapitre.</span><a href="boutique.html">Découvrir les pièces <span aria-hidden="true"></span></a></div>
+  <header class="site-header" id="top">
+    <button class="menu-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="main-navigation"><span></span><span></span></button>
+    <a class="wordmark" href="index.html" aria-label="UNLIVED — accueil"><img class="brand-logo" src="assets/unlived-logo.svg" alt="UNLIVED" width="955" height="235"></a>
+    <nav class="main-nav" id="main-navigation" aria-label="Navigation principale"><a href="index.html">Accueil</a><a href="histoire.html">Notre histoire</a><a href="boutique.html">La boutique</a><a href="contact.html">Contact</a><a class="account-nav-link" href="compte.html" aria-current="page"><span>Connexion</span><b aria-hidden="true"></b></a></nav>
+    <a class="header-favorites" href="compte.html#favoris" aria-label="Retrouver mes favoris"><span aria-hidden="true"><svg class="ui-icon icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg></span><span>Favoris</span></a>
+  </header>
+  <main class="account-shell" id="main-content"><nav class="breadcrumbs page-breadcrumbs" aria-label="Fil d’Ariane"><a href="index.html">Accueil</a><span aria-hidden="true">/</span><span aria-current="page">Mon compte</span></nav>
+    <aside class="account-sidebar"><div class="account-sidebar-brand"><span class="account-overline">UNLIVED · ESPACE PERSONNEL</span><h1>Mon espace</h1><p>Garde le cap sur ce qui compte pour toi.</p></div><nav class="account-side-nav" aria-label="Sections du compte"><a href="#apercu" data-account-view="apercu">Vue d’ensemble</a><a href="#favoris" data-account-view="favoris">Favoris <span id="sidebar-favorites-count">0</span></a><a href="#commandes" data-account-view="commandes">Commandes</a><a href="#affiliation" data-account-view="affiliation">Affiliation</a><a href="#retraits" data-account-view="retraits">Retraits</a><a href="#profil" data-account-view="profil">Paramètres</a><a href="#account-requests" data-account-view="account-requests">Mes demandes</a></nav><a class="account-sidebar-shop" href="boutique.html">Explorer les pièces</a></aside>
+    <section class="account-content">
+      <div id="auth-panel" class="auth-panel">
+        <p class="account-kicker">UN COMPTE, POUR CONTINUER</p><h2 id="auth-title">Reviens à<br><em>ce qui compte.</em></h2><p class="account-intro">Connecte-toi pour retrouver tes favoris et gérer tes informations. La liste d’attente reste accessible sans compte.</p>
+        <div class="auth-tabs" role="group" aria-label="Connexion ou création de compte"><button class="is-active" type="button" aria-pressed="true" data-auth-mode="login">Connexion</button><button type="button" aria-pressed="false" data-auth-mode="signup">Créer un compte</button></div>
+        <form id="auth-form" class="account-form">
+          <label id="name-field" hidden for="auth-name">Ton prénom<input id="auth-name" name="name" autocomplete="given-name" placeholder="Prénom"></label>
+          <label for="auth-email">Adresse e-mail<input id="auth-email" type="email" name="email" autocomplete="email" required placeholder="toi@exemple.com"></label>
+          <label for="auth-password">Mot de passe<input id="auth-password" type="password" name="password" autocomplete="current-password" required placeholder="Ton mot de passe"></label>
+          <button id="forgot-password" class="quiet-link" type="button">Mot de passe oublié ?</button>
+          <button id="auth-submit" class="button button-dark" type="submit"><span>Me connecter</span><b></b></button>
+        </form>
+        <p id="auth-message" class="account-message" role="status"></p>
+        
+      </div>
+      <div id="customer-dashboard" hidden><p class="recovery-note" id="recovery-note" hidden>Choisis ton nouveau mot de passe dans « Mes informations » pour terminer la réinitialisation.</p>
+        <div class="account-welcome"><div><p class="account-kicker">TON ESPACE UNLIVED</p><h2>Bonjour,<br><em id="customer-name">toi.</em></h2><p id="customer-email" class="account-muted"></p></div><button type="button" id="sign-out" class="quiet-link">Se déconnecter </button></div>
+        <section id="apercu" class="account-section"><div class="account-section-heading"><div><p class="account-kicker">TON PARCOURS</p><h3>Vue d’ensemble</h3></div></div><p class="account-muted">Retrouve tes pièces enregistrées, tes commandes et ton programme d’affiliation dans le menu à gauche.</p><div class="account-overview-links"><a href="#favoris">Mes favoris</a><a href="#commandes">Mes commandes</a><a href="#affiliation">Mon affiliation</a></div></section><span id="favorites-count" hidden>0</span>
+        <section id="favoris" class="account-section"><div class="account-section-heading"><div><p class="account-kicker">LES PIÈCES QUI TE PARLENT</p><h3>Mes favoris</h3></div><a class="text-link" href="boutique.html">Explorer <span></span></a></div><div class="account-favorites" id="account-favorites"><p class="account-empty">Chargement de tes favoris…</p></div></section>
+        <section id="commandes" class="account-section"><div class="account-section-heading"><div><p class="account-kicker">CHAQUE ÉTAPE COMPTE</p><h3>Mes commandes</h3></div></div><div class="account-orders" id="account-orders"><p class="account-empty">Chargement de tes commandes…</p></div></section>
+        <section id="profil" class="account-section"><div class="account-section-heading"><div><p class="account-kicker">TES INFORMATIONS</p><h3>Mon compte</h3></div></div><div class="profile-card"><form id="email-form" class="account-form profile-form"><label for="new-email">Modifier mon adresse e-mail<input id="new-email" type="email" required autocomplete="email"></label><label>Mot de passe actuel<input id="current-password-email" type="password" required autocomplete="current-password"></label><button class="button button-outline" type="submit"><span>Mettre à jour l’e-mail</span><b></b></button><p class="account-message" id="email-message" role="status"></p></form><form id="password-form" class="account-form profile-form"><label>Mot de passe actuel<input id="current-password-change" type="password" required autocomplete="current-password"></label><label for="new-password">Choisir un nouveau mot de passe<input id="new-password" type="password" minlength="10" required autocomplete="new-password" placeholder="10 caractères minimum"></label><label for="confirm-password">Confirmer le nouveau mot de passe<input id="confirm-password" type="password" minlength="10" required autocomplete="new-password"></label><button class="button button-outline" type="submit"><span>Modifier le mot de passe</span><b></b></button><p class="account-message" id="password-message" role="status"></p></form><p class="profile-note">Ton mot de passe actuel est requis pour modifier tes identifiants.</p></div></section>
+      </div>
+      <div class="account-support"><p>Besoin d’un coup de main ?</p><a class="text-link" href="contact.html">Nous écrire <span></span></a></div>
+    </section>
+  </main>
+  <footer class="footer"><div class="footer-top"><div><span class="small-label">LE PROCHAIN CHAPITRE T’APPARTIENT.</span><p class="footer-statement">Until you <em>decide.</em></p></div><a class="footer-contact" href="boutique.html">Choisir ma pièce <span></span></a></div><div class="footer-columns"><div><a class="wordmark footer-logo" href="index.html" aria-label="UNLIVED — accueil"><img class="brand-logo" src="assets/unlived-logo.svg" alt="UNLIVED" width="955" height="235"></a><p class="footer-origin">Made in Mali. Une intention sans frontières.<br>Des pièces pour le jour où tu décides de commencer.</p></div><nav aria-label="Explorer"><strong>EXPLORER</strong><a href="index.html">Accueil</a><a href="histoire.html">Notre histoire</a><a href="boutique.html">La boutique</a><a href="compte.html">Mon compte</a><a href="contact.html">Contact</a></nav><nav aria-label="Informations et politiques"><strong>EN TOUTE CLARTÉ</strong><a href="livraison.html">Livraison</a><a href="retours.html">Retours et remboursements</a><a href="confidentialite.html">Confidentialité</a><a href="conditions.html">Conditions d’utilisation</a><a href="mentions-legales.html">Mentions légales</a></nav></div><div class="footer-bottom"><span>© 2026 UNLIVED. Tous droits réservés.</span></div></footer>
+  <div class="toast" role="status" aria-live="polite"></div>
+  
+  <script defer src="local-client.js?v=20261019"></script>
+  <script defer src="customer.js?v=20261019"></script>
+  <script defer src="cart.js"></script>
+  <script defer src="script.js"></script>
+  <script defer src="account.js?v=20261019"></script>
+  <script defer src="brand.js"></script>
+<script defer src="business-client.js?v=20261020b"></script><script defer src="account-nav.js?v=20261020"></script></body>
+</html>

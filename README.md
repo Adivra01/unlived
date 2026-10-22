@@ -1,32 +1,67 @@
-# UNLIVED — site de présentation et administration
+# UNLIVED — SQLite
 
-Site en français composé des pages d’accueil (`index.html`), d’histoire (`histoire.html`), de produit (`produit.html`) et de l’espace d’administration (`admin.html`). Le site public reste en HTML, CSS et JavaScript avec GSAP 3 / ScrollTrigger, sans compilation. L’espace d’administration utilise Supabase Auth, la base de données PostgreSQL du projet UNLIVED et ses règles RLS. Les commandes sont préparées dans la base, mais le paiement en ligne n’est pas encore connecté.
-
-## Aperçu local
-
-Depuis ce dossier, lancer un serveur local :
+## Démarrer
 
 ```sh
-python3 -m http.server 8000
+python3 server.py --port 8081
 ```
 
-Puis ouvrir http://localhost:8000. L’admin est disponible sur http://localhost:8000/admin.html. Pour parcourir le tableau sans connexion, ouvrir http://localhost:8000/admin.html?preview=1 : cet aperçu ne montre que le catalogue public et ne permet aucune modification.
+Site : http://127.0.0.1:8081/index.html
+Administration : http://127.0.0.1:8081/admin.html
+Compte client : http://127.0.0.1:8081/compte.html
 
-Les photos et le film optimisés se trouvent dans `assets/`. Les dépendances de navigateur sont chargées depuis jsDelivr ; une connexion Internet est nécessaire pour Supabase, GSAP et les polices.
+Utiliser ce serveur Python, pas un serveur statique : les comptes et inscriptions nécessitent l’API locale.
+Python 3.10+ et sa bibliothèque standard suffisent. Le catalogue initial est dans `data/catalog.json`.
+Son import se fait une seule fois. Le catalogue contient les références actuelles et les futurs chapitres en brouillon.
+La base persistante est `.data/unlived.sqlite3` ; ce dossier est privé, ignoré par Git et non servi par HTTP.
+Aucun compte n’est créé automatiquement au démarrage.
 
-## Première connexion admin
+## Comptes et accès
 
-1. Créer un compte e-mail + mot de passe dans **Authentication → Users** du projet Supabase.
-2. Ouvrir **SQL Editor**, remplacer l’adresse ci-dessous par celle du compte, puis exécuter la requête :
-
-```sql
-insert into public.admin_users (user_id)
-select id from auth.users
-where email = 'toi@unlived.co';
+```sh
+python3 manage.py create-user --email admin@example.com --role admin --name Administrateur
+python3 manage.py create-user --email client@example.com --role client --name Client
+python3 manage.py backup
 ```
 
-3. Se connecter sur `/admin.html` avec ce compte.
+Les mots de passe générés ne sont affichés qu’à la création. Ils sont stockés sous forme de hachage scrypt salé.
+Sessions aléatoires, cookie HttpOnly/SameSite, expiration à 7 jours. Les rôles sont vérifiés côté serveur.
+L’inscription publique crée uniquement des clients. Les clients ne lisent que leurs favoris et commandes.
+La modification de l’e-mail ou du mot de passe exige le mot de passe actuel.
+L’envoi d’e-mails et la récupération par e-mail sont en attente de configuration.
 
-Le fichier `supabase-config.js` contient l’URL du projet et sa clé **publishable**, destinée au navigateur. Aucune clé secrète ou `service_role` n’est exposée. La migration initiale est dans `supabase/migrations/` ; elle active RLS sur toutes les tables et réserve la gestion des commandes et messages aux identifiants présents dans `admin_users`.
+## Liste d’attente et avis
 
-L’admin comprend le tableau de bord, le catalogue, les variantes et leur galerie (un lien par ligne, `.mp4` pour la vidéo), les commandes, les clients calculés depuis les commandes, la boîte de réception et les réglages d’accès. Le formulaire de contact enregistre ses messages dans Supabase, avec une ouverture de l’application e-mail en solution de repli. Les prix et stocks restent vides tant qu’ils ne sont pas confirmés. La boutique publique lit le catalogue actif depuis Supabase ; les commandes apparaîtront une fois un paiement connecté.
+Choix produit et taille → coordonnées et consentement → remerciement et questionnaire.
+Les inscriptions et réponses sont enregistrées dans SQLite et réservées aux administrateurs.
+Administration → Liste d’intérêt : recherche, filtre produit, avec/sans réponse, actualisation.
+Trois exports CSV UTF-8 : contacts, avis seuls, contacts et avis réunis. Les exports respectent les filtres.
+Import Excel ou Google Sheets avec séparateur point-virgule. Les champs à risque de formule sont neutralisés.
+Pas de synchronisation Google ni d’envoi automatique d’e-mail pour le moment.
+Les commandes et leur suivi restent préparés ; aucun paiement réel n’est connecté.
+
+## Langues et devises
+
+Cinq langues intégrées : français, anglais, espagnol, italien, arabe (RTL).
+Modifier `locales/translations.tsv` et `locales/runtime.tsv`, puis lancer `python3 scripts/build-locales.py` et redémarrer.
+La détection du pays utilise country.is sans clé, avec repli sur la langue du navigateur.
+Le choix manuel est mémorisé. Les nouveaux textes doivent être ajoutés aux dictionnaires.
+Les photos restent fidèles aux vêtements ; les textes imprimés sont expliqués en légende traduite.
+Les conversions monétaires utilisent Frankfurter, cache de 24 heures. Montants indicatifs marqués ≈.
+Si le taux manque, affichage en euros. Les données comptables d’origine ne sont pas converties.
+
+## Hébergement
+
+Cette version tourne localement. Pour recueillir des inscriptions depuis des publicités, déployer le serveur
+sur un hébergement avec disque persistant et HTTPS, et définir `PUBLIC_ORIGIN=https://votre-domaine`.
+Le proxy HTTPS doit joindre le serveur Python. Ne jamais publier `.data` ni les sauvegardes.
+Faire des sauvegardes régulières avec `manage.py backup`. Les polices, GSAP, la géolocalisation et les taux
+peuvent contacter des services publics ; comptes et catalogue n’exigent aucune clé externe.
+
+## Version de préparation au lancement — octobre 2026
+
+- Guide complet : `docs/GUIDE-SEO-GEO-MISE-EN-LIGNE.md`.
+- Persona, hypothèses et messages : `docs/PERSONA-ET-LIGNE-EDITORIALE.md`.
+- Préparer les canoniques, JSON-LD et le sitemap : `python3 scripts/prepare-seo.py https://unlived.club`.
+- Les prix publics sont volontairement non renseignés pendant le test d’intérêt. Il ne s’agit pas de produits gratuits.
+- Le bouton de son et le hero vidéo ont été retirés de l’accueil.

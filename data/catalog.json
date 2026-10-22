@@ -1,0 +1,299 @@
+{
+  "products": [
+    {
+      "id": "8ea7472b-3c4b-419d-bfa5-df0d8c263b85",
+      "slug": "in-between-pull",
+      "title": "IN-BETWEEN — Pull",
+      "collection": "ACTE II",
+      "category": "Pull",
+      "description": "Pour cet entre-deux : la vie que tu connais, et celle que tu n’as pas encore choisie. IN-BETWEEN te rappelle que ton temps et ta direction t’appartiennent. Pas besoin de tout quitter aujourd’hui. Une décision peut commencer plus petit.",
+      "status": "draft",
+      "featured": false,
+      "price_cents": null,
+      "currency": "EUR",
+      "created_at": "2026-10-16T16:31:36.109581+00:00",
+      "updated_at": "2026-10-17T09:56:25.952749+00:00",
+      "planned_price_cents": 5900
+    },
+    {
+      "id": "f207bec8-3e70-4477-ad2a-952562cb59ec",
+      "slug": "do-it-afraid-hoodie",
+      "title": "DO IT AFRAID — Hoodie",
+      "collection": "ACTE III",
+      "category": "Pull à capuche",
+      "description": "La peur ne signifie pas que tu dois renoncer. DO IT AFRAID est une pièce pour celles et ceux qui avancent avec le doute encore présent — sans jouer à ne jamais avoir peur.",
+      "status": "draft",
+      "featured": false,
+      "price_cents": null,
+      "currency": "EUR",
+      "created_at": "2026-10-16T16:31:36.109581+00:00",
+      "updated_at": "2026-10-17T09:56:25.952749+00:00",
+      "planned_price_cents": 7500
+    },
+    {
+      "id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "slug": "day-one",
+      "title": "DAY ONE — T-shirt",
+      "collection": "ACTE I: DAY ONE",
+      "category": "T-shirt",
+      "description": "Un essentiel pour les premiers pas ordinaires. Blanc ou noir, DAY ONE porte ce rappel : tu peux commencer avec le doute encore présent. La décision reste la tienne.",
+      "status": "active",
+      "featured": true,
+      "price_cents": null,
+      "currency": "EUR",
+      "created_at": "2026-09-27T14:50:02.083454+00:00",
+      "updated_at": "2026-10-17T09:56:25.952749+00:00",
+      "planned_price_cents": 3500
+    },
+    {
+      "id": "47daa743-cdc8-4b77-aa89-f6db7a61404a",
+      "slug": "day-one-rouge",
+      "title": "LE DÉCLIC — Rouge",
+      "collection": "ACTE I: DAY ONE",
+      "category": "T-shirt",
+      "description": "Le rouge marque le moment où tu choisis de ne plus remettre à plus tard. La pièce signature de DAY ONE : un t-shirt rouge et deux formations envisagées pour passer du premier geste à une action régulière. Programme et accès à confirmer avant le lancement.",
+      "status": "active",
+      "featured": true,
+      "price_cents": null,
+      "currency": "EUR",
+      "created_at": "2026-10-17T09:56:25.952749+00:00",
+      "updated_at": "2026-10-17T09:56:25.952749+00:00",
+      "planned_price_cents": 4900
+    }
+  ],
+  "product_variants": [
+    {
+      "id": "eb6d59b0-720f-40f3-ae55-fa5b08b8c914",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "color_name": "Blanc",
+      "color_slug": "blanc",
+      "color_hex": "#E8E4DC",
+      "sku": "UL-DAYONE-WHT",
+      "stock_quantity": null,
+      "is_available": true,
+      "created_at": "2026-09-27T14:50:02.083454+00:00",
+      "updated_at": "2026-09-27T14:50:02.083454+00:00",
+      "stock_status": "unknown"
+    },
+    {
+      "id": "79077a5d-19ed-4cd7-8f56-b13e4657e62e",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "color_name": "Noir",
+      "color_slug": "noir",
+      "color_hex": "#0E1520",
+      "sku": "UL-DAYONE-BLK",
+      "stock_quantity": null,
+      "is_available": true,
+      "created_at": "2026-09-27T14:50:02.083454+00:00",
+      "updated_at": "2026-09-27T14:50:02.083454+00:00",
+      "stock_status": "unknown"
+    },
+    {
+      "id": "86e1940a-0102-47dc-a9d6-41e3bfa13cee",
+      "product_id": "8ea7472b-3c4b-419d-bfa5-df0d8c263b85",
+      "color_name": "Écru",
+      "color_slug": "ecru",
+      "color_hex": "#E8E4DC",
+      "sku": "UL-INBETWEEN-ECR",
+      "stock_quantity": null,
+      "is_available": true,
+      "created_at": "2026-10-16T16:31:36.109581+00:00",
+      "updated_at": "2026-10-16T16:31:36.109581+00:00",
+      "stock_status": "unknown"
+    },
+    {
+      "id": "3c9309c4-fe3e-46a2-9232-f480087d7fcb",
+      "product_id": "8ea7472b-3c4b-419d-bfa5-df0d8c263b85",
+      "color_name": "Bleu nuit",
+      "color_slug": "bleu-nuit",
+      "color_hex": "#0E1520",
+      "sku": "UL-INBETWEEN-NVY",
+      "stock_quantity": null,
+      "is_available": true,
+      "created_at": "2026-10-16T16:31:36.109581+00:00",
+      "updated_at": "2026-10-16T16:31:36.109581+00:00",
+      "stock_status": "unknown"
+    },
+    {
+      "id": "da391ed1-08bd-4593-8d9b-1f2333bdcd5a",
+      "product_id": "f207bec8-3e70-4477-ad2a-952562cb59ec",
+      "color_name": "Bleu nuit",
+      "color_slug": "bleu-nuit",
+      "color_hex": "#0E1520",
+      "sku": "UL-AFRAID-NVY",
+      "stock_quantity": null,
+      "is_available": true,
+      "created_at": "2026-10-16T16:31:36.109581+00:00",
+      "updated_at": "2026-10-16T16:31:36.109581+00:00",
+      "stock_status": "unknown"
+    },
+    {
+      "id": "8e1b09f5-2bdc-4d79-a7db-58a99cbfe537",
+      "product_id": "f207bec8-3e70-4477-ad2a-952562cb59ec",
+      "color_name": "Bordeaux",
+      "color_slug": "bordeaux",
+      "color_hex": "#400D0A",
+      "sku": "UL-AFRAID-WIN",
+      "stock_quantity": null,
+      "is_available": true,
+      "created_at": "2026-10-16T16:31:36.109581+00:00",
+      "updated_at": "2026-10-16T16:31:36.109581+00:00",
+      "stock_status": "unknown"
+    },
+    {
+      "id": "c7e7b7b0-7353-4b77-a5cd-e7584e357bfe",
+      "product_id": "47daa743-cdc8-4b77-aa89-f6db7a61404a",
+      "color_name": "Rouge",
+      "color_slug": "rouge",
+      "color_hex": "#7A2E38",
+      "sku": "UL-DAYONE-RED",
+      "stock_quantity": null,
+      "is_available": true,
+      "created_at": "2026-10-17T09:56:25.952749+00:00",
+      "updated_at": "2026-10-17T09:56:25.952749+00:00",
+      "stock_status": "unknown"
+    }
+  ],
+  "product_media": [
+    {
+      "id": "7adadda0-6a8e-4ec3-9b91-337d97647874",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "eb6d59b0-720f-40f3-ae55-fa5b08b8c914",
+      "media_type": "image",
+      "url": "assets/edition-blanc.png",
+      "alt_text": "UNLIVED — blanc — vue 1",
+      "sort_order": 0,
+      "created_at": "2026-10-18T17:19:05.760290+00:00"
+    },
+    {
+      "id": "9b952d2f-122d-4459-8415-19a077a8ecbb",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "eb6d59b0-720f-40f3-ae55-fa5b08b8c914",
+      "media_type": "image",
+      "url": "assets/edition-scene.png",
+      "alt_text": "UNLIVED — blanc — vue 2",
+      "sort_order": 1,
+      "created_at": "2026-10-18T17:19:05.760483+00:00"
+    },
+    {
+      "id": "9eaeb8ca-5de3-4608-8b76-fb2de74a020a",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "eb6d59b0-720f-40f3-ae55-fa5b08b8c914",
+      "media_type": "image",
+      "url": "assets/edition-dos-trio.png",
+      "alt_text": "UNLIVED — blanc — vue 3",
+      "sort_order": 2,
+      "created_at": "2026-10-18T17:19:05.760498+00:00"
+    },
+    {
+      "id": "442fae47-d1a3-4879-b979-d61a9b1e3d08",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "eb6d59b0-720f-40f3-ae55-fa5b08b8c914",
+      "media_type": "image",
+      "url": "assets/edition-portant.png",
+      "alt_text": "UNLIVED — blanc — vue 4",
+      "sort_order": 3,
+      "created_at": "2026-10-18T17:19:05.760510+00:00"
+    },
+    {
+      "id": "e0f930e7-518f-4cc9-8ffd-1d4065d0a70c",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "eb6d59b0-720f-40f3-ae55-fa5b08b8c914",
+      "media_type": "image",
+      "url": "assets/edition-etiquettes.png",
+      "alt_text": "UNLIVED — blanc — vue 5",
+      "sort_order": 4,
+      "created_at": "2026-10-18T17:19:05.760522+00:00"
+    },
+    {
+      "id": "32b074f2-3ef0-4bd8-8775-627c57b344d1",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "79077a5d-19ed-4cd7-8f56-b13e4657e62e",
+      "media_type": "image",
+      "url": "assets/edition-noir.png",
+      "alt_text": "UNLIVED — noir — vue 1",
+      "sort_order": 0,
+      "created_at": "2026-10-18T17:19:05.760569+00:00"
+    },
+    {
+      "id": "04bfd0ce-4631-489b-aed1-d7df4e440cae",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "79077a5d-19ed-4cd7-8f56-b13e4657e62e",
+      "media_type": "image",
+      "url": "assets/edition-dos-trio.png",
+      "alt_text": "UNLIVED — noir — vue 2",
+      "sort_order": 1,
+      "created_at": "2026-10-18T17:19:05.760583+00:00"
+    },
+    {
+      "id": "5afdb001-34c1-4329-b702-317a38dce9f4",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "79077a5d-19ed-4cd7-8f56-b13e4657e62e",
+      "media_type": "image",
+      "url": "assets/edition-portant.png",
+      "alt_text": "UNLIVED — noir — vue 3",
+      "sort_order": 2,
+      "created_at": "2026-10-18T17:19:05.760594+00:00"
+    },
+    {
+      "id": "fb857eb2-05d4-46a6-8268-86d45edd7b76",
+      "product_id": "baece7e2-ea2f-47eb-a147-910b384aa696",
+      "variant_id": "79077a5d-19ed-4cd7-8f56-b13e4657e62e",
+      "media_type": "image",
+      "url": "assets/edition-etiquettes.png",
+      "alt_text": "UNLIVED — noir — vue 4",
+      "sort_order": 3,
+      "created_at": "2026-10-18T17:19:05.760605+00:00"
+    },
+    {
+      "id": "4cbacaa0-5907-4ef2-a79a-9b050913a630",
+      "product_id": "47daa743-cdc8-4b77-aa89-f6db7a61404a",
+      "variant_id": "c7e7b7b0-7353-4b77-a5cd-e7584e357bfe",
+      "media_type": "image",
+      "url": "assets/edition-rouge.png",
+      "alt_text": "UNLIVED — rouge — vue 1",
+      "sort_order": 0,
+      "created_at": "2026-10-18T17:19:05.760707+00:00"
+    },
+    {
+      "id": "0dc118d8-8a03-4bfc-ac9e-86aa727beccf",
+      "product_id": "47daa743-cdc8-4b77-aa89-f6db7a61404a",
+      "variant_id": "c7e7b7b0-7353-4b77-a5cd-e7584e357bfe",
+      "media_type": "image",
+      "url": "assets/edition-rouge-studio.png",
+      "alt_text": "UNLIVED — rouge — vue 2",
+      "sort_order": 1,
+      "created_at": "2026-10-18T17:19:05.760719+00:00"
+    },
+    {
+      "id": "1f14f972-dc0d-4cb2-88a4-fe471cc6e628",
+      "product_id": "47daa743-cdc8-4b77-aa89-f6db7a61404a",
+      "variant_id": "c7e7b7b0-7353-4b77-a5cd-e7584e357bfe",
+      "media_type": "image",
+      "url": "assets/edition-rouge-detail.png",
+      "alt_text": "UNLIVED — rouge — vue 3",
+      "sort_order": 2,
+      "created_at": "2026-10-18T17:19:05.760730+00:00"
+    },
+    {
+      "id": "c1f64e3c-89b2-4088-9adb-66ceeb9b51a7",
+      "product_id": "47daa743-cdc8-4b77-aa89-f6db7a61404a",
+      "variant_id": "c7e7b7b0-7353-4b77-a5cd-e7584e357bfe",
+      "media_type": "image",
+      "url": "assets/edition-dos-trio.png",
+      "alt_text": "UNLIVED — rouge — vue 4",
+      "sort_order": 3,
+      "created_at": "2026-10-18T17:19:05.760743+00:00"
+    },
+    {
+      "id": "49ba1f89-76a4-4237-940e-03917f9e6e81",
+      "product_id": "47daa743-cdc8-4b77-aa89-f6db7a61404a",
+      "variant_id": "c7e7b7b0-7353-4b77-a5cd-e7584e357bfe",
+      "media_type": "image",
+      "url": "assets/edition-etiquettes.png",
+      "alt_text": "UNLIVED — rouge — vue 5",
+      "sort_order": 4,
+      "created_at": "2026-10-18T17:19:05.760754+00:00"
+    }
+  ]
+}

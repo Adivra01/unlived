@@ -3,97 +3,86 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0E1520">
+  <meta name="theme-color" content="#000000">
   <meta name="description" content="UNLIVED — There’s a life you haven’t lived. Des essentiels pour choisir sa voie, oser le premier pas et tenir sa promesse.">
   <title>UNLIVED — There’s a life you haven’t lived</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+  <link rel="stylesheet" href="cart.css">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="UNLIVED">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="UNLIVED — There’s a life you haven’t lived">
+  <meta property="og:description" content="UNLIVED — There’s a life you haven’t lived. Des essentiels pour choisir sa voie, oser le premier pas et tenir sa promesse.">
+  <meta property="og:image" content="https://unlived.club/assets/edition-dos-trio.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="brand.css?v=20261022">
+<script>try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&(!sessionStorage.getItem('unlived-entry-v2')||new URLSearchParams(location.search).has('intro')))document.documentElement.classList.add('brand-entering')}catch{}</script>
+<link rel="stylesheet" href="i18n.css?v=20261019">
+<script defer src="i18n.js?v=20261020"></script>
+
+<link rel="canonical" href="https://unlived.club/">
+<meta property="og:url" content="https://unlived.club/">
+<meta name="site-url" content="https://unlived.club/">
+<script type="application/ld+json" id="site-schema">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://unlived.club/#organization", "name": "UNLIVED", "url": "https://unlived.club/", "logo": "https://unlived.club/assets/unlived-logo.svg"}, {"@type": "WebSite", "@id": "https://unlived.club/#website", "name": "UNLIVED", "url": "https://unlived.club/", "inLanguage": "fr", "publisher": {"@id": "https://unlived.club/#organization"}}, {"@type": "WebPage", "@id": "https://unlived.club/#page", "url": "https://unlived.club/", "name": "Accueil", "isPartOf": {"@id": "https://unlived.club/#website"}, "inLanguage": "fr"}]}</script>
+<link rel="stylesheet" href="business.css"></head>
+<body class="home-page">
+  <div class="brand-intro" role="dialog" aria-modal="true" aria-label="Bienvenue chez UNLIVED">
+    <span class="intro-corner">UNLIVED / ACTE I</span><span class="intro-corner intro-corner-right">LE PREMIER CHAPITRE</span>
+    <div class="intro-center"><div class="intro-logo-mask"><img src="assets/unlived-logo.svg" width="955" height="235" alt="UNLIVED"></div><p class="intro-message"><span>Le premier pas</span><em>t’appartient.</em></p><span class="intro-rule" aria-hidden="true"></span></div>
+    <span class="intro-signature">UNTIL YOU DECIDE.</span><button class="intro-skip" type="button">Entrer <span aria-hidden="true"></span></button>
+  </div>
+  <a class="skip-link" href="#main-content">Aller au contenu</a>
   <div class="reading-progress" aria-hidden="true"><span></span></div>
-  <div class="announcement"><span>Une pièce. Un rappel. Le reste t’appartient.</span><a href="#boutique">Découvrir la collection <span aria-hidden="true">↗</span></a></div>
+  <div class="announcement"><span>ACTE I: DAY ONE — Le premier chapitre.</span><a href="boutique.html">Découvrir les pièces <span aria-hidden="true"></span></a></div>
   <header class="site-header" id="top">
-    <button class="menu-toggle" aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span></button>
-    <a class="wordmark" href="index.html" aria-label="Unlived — accueil"><span class="wordmark-script">U</span><span class="wordmark-text">NLIVED</span><sup>®</sup></a>
-    <nav class="main-nav" aria-label="Navigation principale">
-      <a href="index.html" aria-current="page">Accueil</a><a href="histoire.html">Notre histoire</a><a href="#boutique">La boutique</a><a href="#contact">Contact</a>
-    </nav>
-    <button class="bag-button" aria-label="Voir le panier">Panier <span class="bag-count">0</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg></button>
+    <button class="menu-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="main-navigation"><span></span><span></span></button>
+    <a class="wordmark" href="index.html" aria-label="UNLIVED — accueil"><img class="brand-logo" src="assets/unlived-logo.svg" alt="UNLIVED" width="955" height="235"></a>
+    <nav class="main-nav" id="main-navigation" aria-label="Navigation principale"><a href="index.html" aria-current="page">Accueil</a><a href="histoire.html">Notre histoire</a><a href="boutique.html">La boutique</a><a href="contact.html">Contact</a><a class="account-nav-link" href="compte.html"><span>Connexion</span><b aria-hidden="true"></b></a></nav>
+    <a class="header-favorites" href="compte.html#favoris" aria-label="Retrouver mes favoris"><span aria-hidden="true"><svg class="ui-icon icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg></span><span>Favoris</span></a>
   </header>
-  <main>
-    <section class="hero hero-cinema" aria-labelledby="hero-title">
-      <div class="hero-reel" aria-hidden="true">
-        <div class="hero-scene is-active">
-          <video class="hero-video" muted loop autoplay playsinline preload="metadata" poster="assets/story-couple.webp" aria-label="Film de campagne UNLIVED"><source src="assets/0926-hero.mp4" type="video/mp4"></video>
-        </div>
-        <div class="hero-grain"></div>
-        <div class="hero-image-shade"></div>
-      </div>
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="eyebrow-line"></span> UNLIVED — STILL BECOMING</div>
-        <h1 id="hero-title" class="hero-title"><span>There’s a life</span><span>you haven’t</span><em>lived.</em></h1>
-        <p class="hero-description">Tu n’as pas besoin de tout savoir. Tu as seulement besoin d’un premier pas.</p>
-        <a class="hero-down" href="#boutique" aria-label="Découvrir la suite"><span>Faire le premier pas</span><b>↓</b></a>
-      </div>
-      <div class="hero-rail"><span class="hero-counter"><b>01</b> / FILM</span><span class="hero-rail-line"><i></i></span><span class="hero-rail-word">UNTIL YOU DECIDE</span></div>
-      <div class="hero-caption"><span>UNLIVED — FILM 01 / 18 SEC</span><span>NO ONE IS COMING. SO YOU CAME.</span></div>
-      <div class="hero-scroll">FAIRE DÉFILER <span></span></div>
-    </section>
+  <main id="main-content">
+<section class="hero hero-portal" aria-labelledby="hero-title">
+<img class="portal-image" src="assets/hero-espace-creatif.png" alt="Équipe créative UNLIVED portant les t-shirts noirs, blancs et rouges dans un espace de travail" width="1536" height="1024" fetchpriority="high" decoding="async">
+<div class="hero-copy"><p class="small-label">ACTE I: DAY ONE · LA PREMIÈRE ÉDITION</p><h1 id="hero-title">Ce que tu remets<br>à demain.<br><em>Commence ici.</em></h1><p class="hero-description">Cette idée qui revient. Ce projet que tu gardes pour plus tard. UNLIVED habille le moment où tu lui fais enfin une place.</p><div class="portal-actions"><a class="button button-light" href="boutique.html">Choisir ma pièce <span></span></a><a class="text-link" href="histoire.html">Notre histoire <span></span></a></div><p class="portal-note">Inscription gratuite · Sans achat ni engagement</p></div></section>
 
+<section class="editorial-intro section-pad" id="edition"><div class="section-kicker"><span>01 — L’UNIQUE DIRECTION</span><span>UNTIL YOU DECIDE.</span></div><div class="editorial-intro-grid"><h2 class="reveal">La <em>tienne.</em><span class="intro-dot" aria-hidden="true"></span></h2><div class="reveal"><p>Tu connais cette envie qui revient, même quand tout semble à sa place.</p><p>Le premier pas n’attend pas la fin du doute. DAY ONE porte le souvenir du moment où tu décides d’avancer avec lui.</p><a class="text-link" href="boutique.html">Découvrir les trois t-shirts <span></span></a></div></div></section>
     <section class="shop section-pad" id="boutique">
-      <div class="section-kicker reveal"><span>02 — LA BOUTIQUE</span><span>ACTE I: DAY ONE</span></div>
-      <div class="shop-heading reveal"><div><p class="small-label">ACTE I: DAY ONE · PREMIÈRE ÉDITION</p><h2>Moins de bruit.<br><em>Plus d’intention.</em></h2></div><a class="text-link shop-all" href="#products">Découvrir les pièces <span>↘</span></a></div>
-      <div class="shop-toolbar"><div class="filter-tabs" role="group" aria-label="Filtrer les produits"><button class="filter-tab active" data-filter="all">Tout <span>02</span></button><button class="filter-tab" data-filter="blanc">Clair</button><button class="filter-tab" data-filter="noir">Obscur</button></div><div class="sort-note">ESSENTIELS À PORTER TOUS LES JOURS <span>↗</span></div></div>
-      <div class="product-grid" id="products">
-        <article class="product-card reveal" data-color="blanc" data-product="tee-blanc">
-          <a class="product-image-button" href="produit.html?article=tee-blanc" aria-label="Voir la page du t-shirt DAY ONE blanc"><img src="assets/atelier-blanc.webp" alt="T-shirt blanc UNLIVED, vue de face et de dos" loading="lazy"><span class="product-tag">ACTE I: DAY ONE</span><span class="quick-view">Voir la pièce <b>↗</b></span></a>
-          <div class="product-meta"><div><p class="product-type">ACTE I · T-SHIRT</p><h3>DAY ONE — Blanc</h3></div><a class="product-open" href="produit.html?article=tee-blanc" aria-label="Voir la fiche du t-shirt blanc">↗</a></div>
-          <div class="product-bottom"><span class="product-price">Prix annoncé au lancement</span><div class="swatches"><span class="swatch selected swatch-white" aria-label="Blanc"></span><a class="swatch swatch-black" href="produit.html?article=tee-noir" aria-label="Voir en noir"></a></div></div>
-        </article>
-        <article class="product-card reveal" data-color="noir" data-product="tee-noir">
-          <a class="product-image-button" href="produit.html?article=tee-noir" aria-label="Voir la page du t-shirt DAY ONE noir"><img src="assets/tee-noir-editorial.webp" alt="T-shirt noir UNLIVED porté, détail de la pièce" loading="lazy"><span class="product-tag product-tag-dark">ACTE I: DAY ONE</span><span class="quick-view">Voir la pièce <b>↗</b></span></a>
-          <div class="product-meta"><div><p class="product-type">ACTE I · T-SHIRT</p><h3>DAY ONE — Noir</h3></div><a class="product-open" href="produit.html?article=tee-noir" aria-label="Voir la fiche du t-shirt noir">↗</a></div>
-          <div class="product-bottom"><span class="product-price">Prix annoncé au lancement</span><div class="swatches"><a class="swatch swatch-white" href="produit.html?article=tee-blanc" aria-label="Voir en blanc"></a><span class="swatch selected swatch-black" aria-label="Noir"></span></div></div>
-        </article>
-      </div>
-      <div class="lookbook-panel reveal">
-        <picture class="lookbook-art"><source media="(max-width: 760px)" srcset="assets/story-couple.webp"><img src="assets/collection-mixte.webp" alt="La collection UNLIVED portée par une communauté de femmes et d’hommes" loading="lazy"></picture>
-        <div class="lookbook-shade"></div>
-        <div class="lookbook-copy"><span>UNE MÊME DÉCISION. DES CHEMINS DIFFÉRENTS.</span><h3>Tu commences<br>là où tu es.</h3><a href="histoire.html">Lire notre histoire <b>↗</b></a></div>
-        <span class="lookbook-index">UNLIVED / PEOPLE, PURPOSE, PROGRESS</span>
-      </div>
-      <div class="shop-note"><span class="note-star">✳</span><p>ACTE I: DAY ONE arrive bientôt.<br><b>Choisis le rappel qui t’accompagnera au premier pas.</b></p><a href="#contact" class="text-link">Être prévenu·e au lancement <span>↗</span></a></div>
+      <div class="section-kicker reveal"><span>02 — TROIS COULEURS, UN PREMIER JOUR</span><span>ACTE I: DAY ONE</span></div>
+      <div class="shop-heading reveal"><div><p class="small-label">ACTE I: DAY ONE · PREMIÈRE ÉDITION</p><h2>Un premier jour.<br><em>À ta couleur.</em></h2></div><a class="text-link shop-all" href="boutique.html">Toute la collection <span></span></a></div>
+<div class="launch-grid"><article class="launch-card " data-category="blanc"><a class="launch-art" href="day-one-blanc.html"><img src="assets/edition-blanc.png" alt="T-shirt UNLIVED blanc" loading="lazy"><span>L’ESSENTIEL / ACTE I</span><b aria-hidden="true"></b></a><div class="launch-meta"><div><small>L’ESSENTIEL</small><h3>DAY ONE <em>Blanc.</em></h3></div></div><p>L’essentiel blanc.</p><a class="text-link" href="boutique.html?concept=day-one-blanc#waitlist">Choisir cette pièce <span></span></a></article><article class="launch-card launch-card-red" data-category="rouge"><a class="launch-art" href="day-one-rouge.html"><img src="assets/edition-rouge.png" alt="T-shirt UNLIVED rouge porté, nouveau logo" loading="lazy"><span>SIGNATURE / 02 FORMATIONS</span><b aria-hidden="true"></b></a><div class="launch-meta"><div><small>LA SIGNATURE</small><h3>LE DÉCLIC <em>Rouge.</em></h3></div></div><p>La pièce signature.</p><a class="text-link" href="boutique.html?concept=day-one-rouge#waitlist">Choisir cette pièce <span></span></a></article><article class="launch-card " data-category="noir"><a class="launch-art" href="day-one-noir.html"><img src="assets/edition-noir.png" alt="T-shirt UNLIVED noir" loading="lazy"><span>L’ESSENTIEL / ACTE I</span><b aria-hidden="true"></b></a><div class="launch-meta"><div><small>L’ESSENTIEL</small><h3>DAY ONE <em>Noir.</em></h3></div></div><p>L’essentiel noir.</p><a class="text-link" href="boutique.html?concept=day-one-noir#waitlist">Choisir cette pièce <span></span></a></article></div>
+      <div class="shop-note"><span class="note-star">✳</span><p>ACTE I: DAY ONE arrive bientôt.<br><b>Choisis le rappel qui t’accompagnera au premier pas.</b></p><a href="boutique.html" class="text-link">Être prévenu·e au lancement <span></span></a></div>
     </section>
 
-    <section class="campaign section-pad">
-      <div class="campaign-copy reveal"><span class="small-label">LA SIGNATURE — UNTIL YOU DECIDE</span><h2>Tu peux avoir peur.<br><em>Et commencer.</em></h2><p>Le courage n’attend pas que le doute disparaisse. Il prend forme dans le choix que tu fais maintenant, même petit.</p><a href="#boutique" class="button button-light">Choisir un rappel à porter <span>↗</span></a></div>
-      <div class="campaign-photo" data-parallax="0.07"><img src="assets/story-couple.webp" alt="Deux personnes portant les essentiels UNLIVED" loading="lazy"><span class="campaign-side">TA PRÉSENCE. TES RÈGLES.</span></div>
+<section class="red-chapter section-pad" id="le-declic" aria-labelledby="declic-title"><div class="red-chapter-art"><span class="red-index" aria-hidden="true">01 / R</span><img src="assets/edition-rouge-detail.png" alt="T-shirt rouge UNLIVED porté de face et de dos sur un fond dégradé noir et rouge" loading="lazy"><span class="red-art-caption">LE DÉCLIC · LE DÉTAIL DU DOS<br><span class="image-translation">Une version plus accomplie de moi. Esprit, discipline, liberté.</span></span></div><div class="red-chapter-copy"><p class="small-label">LE ROUGE / LA PIÈCE SIGNATURE</p><h2 id="declic-title">Ce jour où<br><em>tu décides.</em></h2><p>Tu as déjà imaginé la suite. Peut-être même assez pour en connaître les détails. Le rouge marque cet instant où tu lui donnes enfin une place dans ta vie.</p><p>Un t-shirt. Et des outils pour ce qui vient après le déclic. Pas une promesse de devenir quelqu’un d’autre : une invitation à faire ce premier geste qui t’appartient.</p><p class="launch-note">Inscription gratuite. Le prix sera communiqué avant toute commande.</p><a class="button button-dark" href="day-one-rouge.html">Découvrir LE DÉCLIC <span></span></a></div></section><section class="learning-section section-pad" aria-labelledby="learning-title"><div><p class="small-label">AVEC LE ROUGE / DEUX FORMATIONS ENVISAGÉES</p><h2 id="learning-title">Commencer.<br><em>Puis continuer.</em></h2><p class="learning-note">Deux programmes en préparation, pensés pour être inclus avec la pièce rouge. Contenu, format et modalités d’accès seront confirmés avant toute vente.</p></div><div class="learning-list"><article><span>01</span><div><h3>Faire le premier pas.</h3><p>Nommer ce que tu repousses. Choisir une action à ta portée. La faire, avec la peur qui est là.</p><small>AXE ENVISAGÉ · PASSER À L’ACTION</small></div></article><article><span>02</span><div><h3>Donner une suite.</h3><p>Faire de la place dans tes journées. Reprendre après un arrêt. Construire un rythme qui t’appartient.</p><small>AXE ENVISAGÉ · AUTONOMIE & CONTINUITÉ</small></div></article></div></section>    <section class="campaign section-pad">
+      <div class="campaign-copy reveal"><span class="small-label">LA SIGNATURE — UNTIL YOU DECIDE</span><h2>Tu peux avoir peur.<br><em>Et commencer.</em></h2><p>Le courage n’attend pas que le doute disparaisse. Il prend forme dans le choix que tu fais maintenant, même petit.</p><a href="histoire.html" class="button button-light">Lire notre histoire <span></span></a></div>
+      <div class="campaign-photo" data-parallax="0.07"><img src="assets/edition-portant.png" alt="Trois personnes portant les t-shirts rouges UNLIVED dans un bureau moderne" loading="lazy" decoding="async"><span class="campaign-side">TA PRÉSENCE. TES RÈGLES.<br><span class="image-translation">Une version plus accomplie de moi. Esprit, discipline, liberté.</span></span></div>
     </section>
 
-    <section class="contact section-pad" id="contact">
-      <div class="section-kicker reveal"><span>03 — CONTACT</span><span>ON EST À L’ÉCOUTE</span></div>
-      <div class="contact-grid"><div class="contact-copy reveal"><p class="small-label">UNE QUESTION, UNE IDÉE, UN MOT ?</p><h2>On se parle<br><em>quand tu veux.</em></h2><p>Une question sur les pièces, la formation ou le cercle ? Une idée de collaboration ? Écris-nous. Chaque premier pas peut commencer par un message.</p><div class="contact-mark">U<span>✳</span></div></div>
-        <form class="contact-form reveal" id="contact-form"><label for="name">Ton nom</label><input id="name" name="name" autocomplete="name" placeholder="Comment t’appelles-tu ?" required><label for="email">Ton adresse e-mail</label><input id="email" name="email" type="email" autocomplete="email" placeholder="toi@exemple.com" required><label for="message">Ton message</label><textarea id="message" name="message" rows="3" placeholder="Écris-nous quelques lignes…" required></textarea><button class="button button-dark" type="submit">Continuer dans mon e-mail <span>↗</span></button><p class="form-note">Ton application e-mail s’ouvrira avec ton message déjà préparé.</p></form>
-      </div>
-    </section>
+    <section class="collection-roadmap section-pad"><p class="small-label">UNE MARQUE QUI AVANCE, CHAPITRE APRÈS CHAPITRE.</p><div><article class="current"><span>ACTE I / AUJOURD’HUI</span><h3>Les t-shirts.</h3><p>Blanc. Noir. Rouge signature.</p></article><article><span>ACTE II / PLUS TARD</span><h3>Les pulls.</h3><p>Le prochain chapitre.</p></article><article><span>ACTE III / PLUS TARD</span><h3>Les hoodies.</h3><p>La suite prendra son temps.</p></article></div></section>
+    <section class="home-invitation section-pad"><p class="small-label">LE PREMIER CHAPITRE S’ÉCRIT.</p><h2>Et si c’était<br><em>ton premier jour ?</em></h2><a class="button button-dark" href="boutique.html">Être prévenu·e du lancement <span></span></a><span class="invitation-orbit" aria-hidden="true"></span></section>
   </main>
-  <footer class="footer"><div class="footer-top"><a class="wordmark footer-logo" href="index.html"><span class="wordmark-script">U</span><span class="wordmark-text">NLIVED</span><sup>®</sup></a><p>Ce n’est pas la vie que tu aurais pu vivre.<br>C’est celle que tu choisis de vivre.</p><a class="back-top" href="#top" aria-label="Retour en haut">↑</a></div><div class="footer-bottom"><span>© 2026 UNLIVED. LA SUITE T’APPARTIENT.</span><div><a href="index.html">Accueil</a><a href="histoire.html">Notre histoire</a><a href="#boutique">Boutique</a><a href="#contact">Contact</a></div><span>FAIT POUR AVANCER ✳</span></div></footer>
+  <footer class="footer"><div class="footer-top"><div><span class="small-label">LE PROCHAIN CHAPITRE T’APPARTIENT.</span><p class="footer-statement">Until you <em>decide.</em></p></div><a class="footer-contact" href="boutique.html">Choisir ma pièce <span></span></a></div><div class="footer-columns"><div><a class="wordmark footer-logo" href="index.html" aria-label="UNLIVED — accueil"><img class="brand-logo" src="assets/unlived-logo.svg" alt="UNLIVED" width="955" height="235"></a><p class="footer-origin">Made in Mali. Une intention sans frontières.<br>Des pièces pour le jour où tu décides de commencer.</p></div><nav aria-label="Explorer"><strong>EXPLORER</strong><a href="index.html">Accueil</a><a href="histoire.html">Notre histoire</a><a href="boutique.html">La boutique</a><a href="compte.html">Mon compte</a><a href="contact.html">Contact</a></nav><nav aria-label="Informations et politiques"><strong>EN TOUTE CLARTÉ</strong><a href="livraison.html">Livraison</a><a href="retours.html">Retours et remboursements</a><a href="confidentialite.html">Confidentialité</a><a href="conditions.html">Conditions d’utilisation</a><a href="mentions-legales.html">Mentions légales</a></nav></div><div class="footer-bottom"><span>© 2026 UNLIVED. Tous droits réservés.</span></div></footer>
 
   <div class="sound-dock">
-    <audio id="brand-track" preload="none" loop src="https://drive.google.com/uc?export=download&amp;id=1sHUXYOCbjqK5Ily0a_RoISgGXJCAwo6G"></audio>
-    <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="false" aria-label="Lancer la bande-son">
-      <span class="sound-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path class="sound-wave" d="M16 9a5 5 0 0 1 0 6M18.5 6.5a8.5 8.5 0 0 1 0 11"/></svg></span>
-      <span class="sound-label">Bande-son <b>OFF</b></span><span class="sound-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-    </button>
+    
+    
   </div>
   <div class="toast" role="status" aria-live="polite"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.102.0/dist/umd/supabase.min.js"></script>
-  <script src="supabase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-  <script src="script.js"></script>
-  <script src="catalog.js"></script>
-</body>
+  
+  <script defer src="local-client.js?v=20261019"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script defer src="customer.js?v=20261019"></script>
+  <script defer src="cart.js"></script>
+  <script defer src="script.js"></script>
+  
+  <script defer src="brand.js"></script>
+  <script defer src="collection.js?v=20261019"></script>
+<script defer src="business-client.js?v=20261020"></script></body>
 </html>

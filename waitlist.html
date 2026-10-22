@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="ACTE I: DAY ONE. Trois t-shirts : blanc, noir et rouge signature. Découvre la première collection UNLIVED.">
+  <title>La liste d’attente | UNLIVED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="cart.css">
+  <link rel="stylesheet" href="waitlist.css">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="UNLIVED">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="La boutique — Acte I: DAY ONE | UNLIVED">
+  <meta property="og:description" content="ACTE I: DAY ONE. Trois t-shirts : blanc, noir et rouge signature. Découvre la première collection UNLIVED.">
+  <meta property="og:image" content="assets/edition-dos-trio.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="brand.css?v=20261022">
+<link rel="stylesheet" href="i18n.css?v=20261019">
+<script defer src="i18n.js?v=20261020"></script>
+<meta name="robots" content="noindex, follow">
+<link rel="stylesheet" href="business.css"></head>
+<body>
+  <a class="skip-link" href="#main-content">Aller au contenu</a>
+  <div class="reading-progress" aria-hidden="true"><span></span></div>
+  <div class="announcement"><span>ACTE I: DAY ONE — Le premier chapitre.</span><a href="boutique.html">Découvrir les pièces <span aria-hidden="true"></span></a></div>
+  <header class="site-header" id="top">
+    <button class="menu-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="main-navigation"><span></span><span></span></button>
+    <a class="wordmark" href="index.html" aria-label="UNLIVED — accueil"><img class="brand-logo" src="assets/unlived-logo.svg" alt="UNLIVED" width="955" height="235"></a>
+    <nav class="main-nav" id="main-navigation" aria-label="Navigation principale"><a href="index.html">Accueil</a><a href="histoire.html">Notre histoire</a><a href="boutique.html" aria-current="page">La boutique</a><a href="contact.html">Contact</a><a class="account-nav-link" href="compte.html"><span>Connexion</span><b aria-hidden="true"></b></a></nav>
+    <a class="header-favorites" href="compte.html#favoris" aria-label="Retrouver mes favoris"><span aria-hidden="true"><svg class="ui-icon icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg></span><span>Favoris</span></a>
+  </header>
+<main id="main-content" class="section-pad signup-page"><nav class="breadcrumbs page-breadcrumbs" aria-label="Fil d’Ariane"><a href="index.html">Accueil</a><span aria-hidden="true">/</span><span aria-current="page">Liste d’attente</span></nav><a class="text-link" id="change-selection" href="boutique.html"> Modifier ma sélection</a><p class="small-label">02 / RESTER AU COURANT</p><h1>Le premier pas.<br><em>On garde le lien.</em></h1><p id="selection-summary" class="selection-summary" role="status"></p><p id="selection-missing" hidden>Choisis d’abord une pièce et ta taille dans <a href="boutique.html">la boutique</a>.</p>        <div class="waitlist-form-wrap" id="waitlist-form-wrap">
+          <div class="waitlist-form-heading"><p class="small-label">LA LISTE D’INTÉRÊT</p><h3>Un mot quand<br><em>ça prend forme.</em></h3><p>Inscris-toi pour suivre le concept qui t’intéresse. Cela ne t’engage pas à acheter.</p></div>
+          <form class="waitlist-form" id="waitlist-form">
+            <input class="waitlist-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <input type="hidden" name="concept" id="waitlist-concept-select"><input type="hidden" name="selected_size" id="waitlist-size">
+            <div class="waitlist-name-fields"><label>Prénom *<input name="first_name" maxlength="80" autocomplete="given-name" required placeholder="Ton prénom"></label><label>Nom *<input name="last_name" maxlength="100" autocomplete="family-name" required placeholder="Ton nom"></label></div>
+            <label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="email" required placeholder="toi@exemple.com"></label>
+            <label>Téléphone <span class="optional-label">facultatif</span><input name="phone" type="tel" maxlength="40" autocomplete="tel" placeholder="Pour un éventuel message de lancement"></label>
+            <label class="waitlist-consent"><input type="checkbox" name="consent" required><span>J’accepte qu’UNLIVED conserve ces informations pour me tenir au courant du concept choisi. Je peux demander leur suppression à tout moment.</span></label>
+            <button class="button button-dark" id="waitlist-submit" type="submit"><span>Rejoindre la liste d’intérêt</span><b></b></button>
+            <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite"></p>
+            <p class="waitlist-privacy">Ton adresse ne sera pas affichée publiquement. Les visuels présentent une collection en préparation. L’inscription ne réserve pas de stock. <a href="confidentialite.html">Politique de confidentialité</a>.</p>
+          </form>
+        </div>
+        <section class="waitlist-thanks" id="waitlist-thanks" hidden aria-labelledby="waitlist-thanks-title">
+          <p class="small-label">C’EST NOTÉ.</p><h3 id="waitlist-thanks-title">Merci, <em id="waitlist-thanks-name">toi.</em></h3><p>Ton intérêt pour <strong id="waitlist-thanks-concept"></strong> est enregistré. Avant de partir, ton avis nous aiderait à mieux comprendre ce qui compte pour toi.</p>
+          <form class="feedback-form" id="waitlist-feedback-form"><fieldset><legend>À quel point ce concept t’intéresse ? *</legend><div class="interest-scale" role="radiogroup" aria-label="Niveau d’intérêt de 1 à 5"><label><input type="radio" name="interest_level" value="1" required><span>1<small>Peu</small></span></label><label><input type="radio" name="interest_level" value="2"><span>2</span></label><label><input type="radio" name="interest_level" value="3"><span>3</span></label><label><input type="radio" name="interest_level" value="4"><span>4</span></label><label><input type="radio" name="interest_level" value="5"><span>5<small>Beaucoup</small></span></label></div></fieldset><label>Qu’est-ce qui t’a plu dans cette idée ? *<textarea name="what_appealed" required minlength="5" maxlength="2000" rows="3" placeholder="Le concept, la coupe, le message…"></textarea></label><label>Qu’est-ce qu’on pourrait améliorer ? *<textarea name="what_to_improve" required minlength="5" maxlength="2000" rows="3" placeholder="Même une petite remarque nous aide."></textarea></label><button class="button button-dark" type="submit"><span>Envoyer mon avis</span><b></b></button><p class="waitlist-status" id="feedback-status" role="status" aria-live="polite"></p></form>
+        </section>
+</main>  <footer class="footer"><div class="footer-top"><div><span class="small-label">LE PROCHAIN CHAPITRE T’APPARTIENT.</span><p class="footer-statement">Until you <em>decide.</em></p></div><a class="footer-contact" href="boutique.html">Choisir ma pièce <span></span></a></div><div class="footer-columns"><div><a class="wordmark footer-logo" href="index.html" aria-label="UNLIVED — accueil"><img class="brand-logo" src="assets/unlived-logo.svg" alt="UNLIVED" width="955" height="235"></a><p class="footer-origin">Made in Mali. Une intention sans frontières.<br>Des pièces pour le jour où tu décides de commencer.</p></div><nav aria-label="Explorer"><strong>EXPLORER</strong><a href="index.html">Accueil</a><a href="histoire.html">Notre histoire</a><a href="boutique.html">La boutique</a><a href="compte.html">Mon compte</a><a href="contact.html">Contact</a></nav><nav aria-label="Informations et politiques"><strong>EN TOUTE CLARTÉ</strong><a href="livraison.html">Livraison</a><a href="retours.html">Retours et remboursements</a><a href="confidentialite.html">Confidentialité</a><a href="conditions.html">Conditions d’utilisation</a><a href="mentions-legales.html">Mentions légales</a></nav></div><div class="footer-bottom"><span>© 2026 UNLIVED. Tous droits réservés.</span></div></footer>
+
+  <div class="sound-dock">
+    
+    
+  </div>
+  <div class="toast" role="status" aria-live="polite"></div>
+  
+  <script defer src="local-client.js?v=20261019"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script defer src="customer.js?v=20261019"></script>
+  <script defer src="cart.js"></script>
+  <script defer src="waitlist.js"></script>
+  <script defer src="script.js"></script>
+
+  <script defer src="brand.js"></script>
+<script defer src="business-client.js?v=20261020"></script></body>
+</html>
