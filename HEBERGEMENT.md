@@ -1,16 +1,30 @@
-# Mettre UNLIVED en ligne
+# Mettre UNLIVED en ligne sur Hostinger
 
 Cette archive contient l’application web Python complète. Elle ne peut pas être hébergée comme un simple site statique : l’API et SQLite gèrent les comptes, favoris, produits, inscriptions à la waitlist et réponses au questionnaire.
 
-## Hébergement requis
+## Offre Hostinger requise
 
-Choisir un hébergeur qui accepte une application Python 3.10+ et fournit un disque persistant. Installer le contenu du ZIP à la racine du service. Le fichier `Procfile` donne la commande de démarrage ; si l’hébergeur demande une commande, utiliser :
+Ce projet est une application Python avec une base SQLite persistante. Il faut un **VPS Hostinger** avec accès SSH/root. L’intégration Git des offres d’hébergement Web classiques déploie des sites PHP ou statiques et ne lance pas ce serveur Python. Un ZIP ou un push Git seul ne rend donc pas le backend exécutable sur une offre Web classique.
+
+Sur le VPS, installer Python 3.10 ou plus récent et Git, cloner ce dépôt dans un répertoire privé, puis installer les dépendances :
 
 ```sh
-python3 server.py --host 0.0.0.0 --port $PORT
+git clone https://github.com/Adivra01/unlived.git
+cd unlived
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Définir cette variable d’environnement sur le service :
+Lancer le serveur derrière un reverse proxy HTTPS (par exemple Nginx), en le liant à `127.0.0.1`. Le fichier `Procfile` est destiné aux plateformes qui utilisent ce format ; un VPS Hostinger standard ne le lance pas automatiquement. Exemple de commande de premier démarrage :
+
+```sh
+PUBLIC_ORIGIN=https://unlived.club .venv/bin/python server.py --host 127.0.0.1 --port 8081
+```
+
+Pour garder le service actif après fermeture de la session SSH et le redémarrer après un reboot, configure-le comme service `systemd`, puis configure Nginx et le certificat HTTPS pour `unlived.club`.
+
+Définir comme variable d’environnement persistante du service :
 
 ```text
 PUBLIC_ORIGIN=https://unlived.club
@@ -20,7 +34,7 @@ Le domaine doit pointer vers le service et le trafic public doit passer en HTTPS
 
 ## Disque et données
 
-Monter un disque persistant sur le chemin `.data` à la racine de l’application. Au premier démarrage, l’application crée la base SQLite, initialise les tables et importe les trois t-shirts depuis `data/catalog.json`. Sans ce disque persistant, les comptes, inscriptions et questionnaires peuvent disparaître lors d’un redéploiement.
+Le répertoire `.data` à la racine du projet contient la base SQLite et la clé de chiffrement. Il doit rester sur le stockage persistant du VPS et être sauvegardé avec des permissions privées. Au premier démarrage, l’application initialise les tables et importe les trois t-shirts depuis `data/catalog.json`. Ne place pas `.data` dans le répertoire public servi par Nginx.
 
 L’archive ne contient volontairement ni base locale, ni clé de chiffrement, ni comptes de test. L’application créera une nouvelle clé dans `.data/encryption.key` au premier démarrage. Garder ce fichier privé et le sauvegarder avec la base. Si la clé est perdue, les champs personnels chiffrés ne pourront plus être déchiffrés.
 
