@@ -950,5 +950,13 @@
   "Minimum {{0}}. Délai de validation : {{1}} jours après paiement confirmé. Les paiements et versements ne sont pas encore ouverts.": "Mínimo {{0}}. Plazo de validación: {{1}} días después del pago confirmado. Los pagos y retiros aún no están disponibles.",
   "Présente les pièces qui te parlent. Le programme prévoit {{0}}% sur les commandes éligibles, payées et non remboursées, après approbation de ta candidature.": "Comparte las prendas que te representan. El programa ofrece un {{0}}% sobre pedidos elegibles, pagados y no reembolsados, tras aprobar tu solicitud.",
   "J’accepte les conditions : attribution au dernier lien affilié consenti pendant {{0}} jours, hors achats personnels, frais de livraison et taxes. Validation après {{1}} jours ; les paiements ne sont pas encore ouverts.": "Acepto las condiciones: atribución al último enlace de afiliado aceptado durante {{0}} días, excluidas compras personales, envío e impuestos. Validación tras {{1}} días; los pagos aún no están disponibles.",
-  "Ta demande de fermeture a été enregistrée. Statut : {{0}}": "Se ha registrado tu solicitud de cierre de cuenta. Estado: {{0}}"
+  "Ta demande de fermeture a été enregistrée. Statut : {{0}}": "Se ha registrado tu solicitud de cierre de cuenta. Estado: {{0}}",
+  "UNLIVED — T-shirts DAY ONE, le premier pas t’appartient": "UNLIVED — Camisetas DAY ONE, tu primer paso",
+  "Découvre les t-shirts UNLIVED, pensés comme un rappel de ce que tu veux commencer. Choisis ta pièce et rejoins la liste d’intérêt, sans achat ni engagement.": "Descubre las camisetas UNLIVED, un recordatorio de lo que quieres empezar. Elige tu prenda y únete a la lista de interés, sin compra ni compromiso.",
+  "Rejoins la liste d’intérêt UNLIVED pour la pièce et la taille que tu as choisies. Inscription gratuite, sans compte, sans paiement et sans engagement.": "Únete a la lista de interés UNLIVED para la prenda y talla que has elegido. Inscripción gratuita, sin cuenta, pago ni compromiso.",
+  "Inscris-toi pour suivre la pièce qui t’intéresse. C’est gratuit, sans compte et sans paiement. Cela ne t’engage pas à acheter.": "Inscríbete para seguir la prenda que te interesa. Es gratis, sin cuenta ni pago. No te compromete a comprar.",
+  "Le questionnaire est facultatif.": "El cuestionario es opcional.",
+  "Continuer sans répondre": "Continuar sin responder",
+  "Ton inscription pour": "Tu inscripción para",
+  "est bien enregistrée. Si tu le souhaites, ton avis nous aiderait à mieux comprendre ce qui compte pour toi.": "se ha guardado. Si lo deseas, tu opinión nos ayudará a entender qué te importa."
 }

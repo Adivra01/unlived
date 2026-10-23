@@ -10,26 +10,20 @@ Site : http://127.0.0.1:8081/index.html
 Administration : http://127.0.0.1:8081/admin.html
 Compte client : http://127.0.0.1:8081/compte.html
 
-Utiliser ce serveur Python, pas un serveur statique : les comptes et inscriptions nécessitent l’API locale.
-Python 3.10+ et sa bibliothèque standard suffisent. Le catalogue initial est dans `data/catalog.json`.
-Son import se fait une seule fois. Le catalogue contient les références actuelles et les futurs chapitres en brouillon.
-La base persistante est `.data/unlived.sqlite3` ; ce dossier est privé, ignoré par Git et non servi par HTTP.
-Aucun compte n’est créé automatiquement au démarrage.
+Ce serveur sert les fichiers locaux et relaie les données vers l’API PHP partagée d’unlived.club.
+Aucune base locale n’est créée au démarrage et aucune écriture locale ne remplace un échec distant.
+Installer les dépendances Python avec `pip install -r requirements.txt` si nécessaire.
 
 ## Comptes et accès
 
-```sh
-python3 manage.py create-user --email admin@example.com --role admin --name Administrateur
-python3 manage.py create-user --email client@example.com --role client --name Client
-python3 manage.py backup
-```
+L’API PHP utilise `.data/auth.sqlite3` sur Hostinger pour les comptes et les données métier.
+Les rôles sont vérifiés côté serveur. Les clients ne lisent que leurs favoris et commandes.
+Les mots de passe sont hachés avec Argon2id lorsqu’il est disponible, sinon bcrypt.
+L’inscription publique crée des clients et exige la confirmation de l’adresse e-mail.
+La modification des identifiants exige le mot de passe actuel. Les e-mails de sécurité passent par Resend.
 
-Les mots de passe générés ne sont affichés qu’à la création. Ils sont stockés sous forme de hachage scrypt salé.
-Sessions aléatoires, cookie HttpOnly/SameSite, expiration à 7 jours. Les rôles sont vérifiés côté serveur.
-L’inscription publique crée uniquement des clients. Les clients ne lisent que leurs favoris et commandes.
-La modification de l’e-mail ou du mot de passe exige le mot de passe actuel.
-Les confirmations d’adresse et la récupération par e-mail utilisent Resend et une file d’envoi chiffrée.
-Configuration et tests : [sécurité de l’authentification](docs/SECURITE-AUTHENTIFICATION.md).
+Déploiement, migration des anciennes inscriptions, création administrateur et tests : [HEBERGEMENT.md](HEBERGEMENT.md).
+Les commandes `manage.py` concernent uniquement l’ancien backend Python autonome et ne modifient pas Hostinger.
 
 ## Liste d’attente et avis
 
@@ -38,7 +32,8 @@ Les inscriptions et réponses sont enregistrées dans SQLite et réservées aux 
 Administration → Liste d’intérêt : recherche, filtre produit, avec/sans réponse, actualisation.
 Trois exports CSV UTF-8 : contacts, avis seuls, contacts et avis réunis. Les exports respectent les filtres.
 Import Excel ou Google Sheets avec séparateur point-virgule. Les champs à risque de formule sont neutralisés.
-Pas de synchronisation Google ni d’envoi automatique d’e-mail pour le moment.
+Un export XLSX à deux onglets est aussi disponible depuis l’administration waitlist.
+Pas de synchronisation automatique Google Sheets ; les e-mails de sécurité utilisent Resend.
 Les commandes et leur suivi restent préparés ; aucun paiement réel n’est connecté.
 
 ## Langues et devises
@@ -53,11 +48,10 @@ Si le taux manque, affichage en euros. Les données comptables d’origine ne so
 
 ## Hébergement
 
-Cette version tourne localement. Pour recueillir des inscriptions depuis des publicités, déployer le serveur
-sur un hébergement avec disque persistant et HTTPS, et définir `PUBLIC_ORIGIN=https://votre-domaine`.
-Le proxy HTTPS doit joindre le serveur Python. Ne jamais publier `.data` ni les sauvegardes.
-Faire des sauvegardes régulières avec `manage.py backup`. Les polices, GSAP, la géolocalisation et les taux
-peuvent contacter des services publics ; comptes et catalogue n’exigent aucune clé externe.
+L’application PHP complète peut être déployée sur l’hébergement Web Hostinger avec PHP 8.1+, SQLite et OpenSSL.
+Le tableau de bord ne requiert plus de backend Python hébergé. Préserver `.data` et ses clés lors des déploiements.
+La configuration Resend doit aussi être présente sur le serveur ; le fichier `.env` local n’est pas publié par Git.
+Voir [HEBERGEMENT.md](HEBERGEMENT.md) pour la procédure et les vérifications.
 
 ## Version de préparation au lancement — octobre 2026
 

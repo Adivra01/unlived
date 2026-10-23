@@ -1,6 +1,8 @@
 (() => {
   let STORAGE_KEY = 'unlived-cart-guest';
   let cartUser=null;
+  let cartVersion=0;
+  let saveQueue=Promise.resolve();
   const read = () => {
     try {
       const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -9,7 +11,16 @@
   };
   let items = read();
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const save = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {} render(); if(cartUser)fetch("/api/business",{method:"POST",headers:{"Content-Type":"application/json","X-UNLIVED-Request":"1"},body:JSON.stringify({action:"cart_save",values:{items}})}).catch(()=>{}); };
+  const save = () => {
+    if(!cartUser){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(items));}catch{}}
+    render();
+    const userId=cartUser,version=cartVersion,snapshot=items.map(item=>({...item}));
+    if(userId)saveQueue=saveQueue.catch(()=>{}).then(async()=>{
+      if(cartUser!==userId||cartVersion!==version)return;
+      try{const response=await fetch('/api/business',{method:'POST',headers:{'Content-Type':'application/json','X-UNLIVED-Request':'1'},body:JSON.stringify({action:'cart_save',values:{items:snapshot,expected_user_id:userId}})});const result=await response.json();if(result.error)throw Error();}
+      catch{if(cartUser===userId&&cartVersion===version)window.UNLIVEDCustomer?.toast('Ton panier n’a pas pu être synchronisé. Réessaie.');}
+    });
+  };
   const drawer = document.createElement('dialog');
   drawer.className = 'cart-drawer';
   drawer.setAttribute('aria-labelledby', 'cart-title');
@@ -64,7 +75,21 @@
     const toast = document.querySelector('.toast'); if (toast) { toast.textContent = 'La pièce a rejoint ton panier.'; clearTimeout(toast._cartTimer); toast._cartTimer = setTimeout(() => toast.classList.remove('show'), 2600); }
   });
   window.UNLIVEDCart = {open, getItems:() => items.slice()};
-  async function switchCart(){const r=await window.UNLIVEDLocal?.auth.getSession();const id=r?.data?.session?.user?.id||null;if(id===cartUser)return;cartUser=id;STORAGE_KEY=id?'unlived-cart-'+id:'unlived-cart-guest';items=read();render();if(id){try{const response=await fetch('/api/business',{method:'POST',headers:{'Content-Type':'application/json','X-UNLIVED-Request':'1'},body:JSON.stringify({action:'cart_load'})});const r=await response.json();if(!r.error&&cartUser===id&&r.data.length){items=r.data;localStorage.setItem(STORAGE_KEY,JSON.stringify(items));render();}}catch{}}}
-  window.UNLIVEDLocal?.auth.onAuthStateChange(switchCart);switchCart();
+  function clearCart(){cartVersion++;cartUser=null;STORAGE_KEY='unlived-cart-guest';items=read();render();}
+  async function switchCart(){
+    const version=++cartVersion;
+    const r=await window.UNLIVEDLocal?.auth.getSession();
+    if(version!==cartVersion)return;
+    const id=r?.data?.session?.user?.id||null;
+    cartUser=id;STORAGE_KEY=id?'unlived-cart-'+id:'unlived-cart-guest';items=id?[]:read();render();
+    drawer.querySelector('.cart-note').textContent='Les prix et l’ouverture des commandes seront confirmés au lancement. '+(id?'Ton panier est enregistré dans ton compte.':'Ton panier reste enregistré sur cet appareil.');
+    if(id){try{
+      localStorage.removeItem(STORAGE_KEY);
+      const response=await fetch('/api/business',{method:'POST',headers:{'Content-Type':'application/json','X-UNLIVED-Request':'1'},body:JSON.stringify({action:'cart_load'})});const result=await response.json();
+      if(cartUser!==id||version!==cartVersion)return;
+      if(result.error||!Array.isArray(result.data))throw Error();items=result.data;render();
+    }catch{if(version===cartVersion)window.UNLIVEDCustomer?.toast('Ton panier n’a pas pu être chargé. Réessaie.');}}
+  }
+  window.UNLIVEDLocal?.auth.onAuthStateChange(event=>{if(event==='USER_UPDATED')return;clearCart();if(event!=='SIGNED_OUT')switchCart();});switchCart();
   render();
 })();

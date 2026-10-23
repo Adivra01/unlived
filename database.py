@@ -65,6 +65,9 @@ def query(db,body,user):
         return [{'user_id':user['id']}] if admin else []
     if table not in TABLES or action not in ('select','insert','upsert','update','delete'):raise PermissionError('Accès interdit.')
     all_rows=rows(db,table)
+    if table=='customer_favorites':
+        if not user:raise PermissionError('Connexion requise.')
+        all_rows=[r for r in all_rows if r.get('user_id')==user['id']]
     public_tables=('products','product_variants','product_media')
     active={p['id'] for p in rows(db,'products') if p.get('status')=='active'}
     if action=='select':
@@ -96,6 +99,7 @@ def query(db,body,user):
         result=[]
         for values in incoming:
             if not isinstance(values,dict):raise ValueError('Données invalides.')
+            if table=='customer_favorites' and values.get('user_id',user['id'])!=user['id']:raise PermissionError('Ce favori appartient à un autre compte.')
             if table=='orders':
                 if any(k in values for k in ('payment_verified','payment_status','paid_at','commission_cents','commission_percent','total_cents','affiliate_code')):raise PermissionError('La confirmation des paiements nécessite le prestataire de paiement.')
                 if values.get('status') in ('processing','shipped','delivered') and any(r.get('payment_verified') is not True for r in selected):raise ValueError('Le paiement doit être confirmé avant la production.')
@@ -114,7 +118,7 @@ def query(db,body,user):
                 if table=='customer_favorites':
                     if row.get('product_id') not in active:raise ValueError('Produit indisponible.')
                     row={k:row[k] for k in ('id','created_at','product_id')};row['user_id']=user['id']
-                    prior=next((r for r in all_rows if r.get('product_id')==row['product_id']),None)
+                    prior=next((r for r in all_rows if r.get('product_id')==row['product_id'] and r.get('user_id')==user['id']),None)
                     if prior and action=='upsert':result.append(prior);continue
                 if table=='launch_waitlist':
                     allowed={'id','created_at','first_name','last_name','email','phone','concept_slug','selected_size','feedback_token','utm_source','utm_campaign','utm_content','consent'}

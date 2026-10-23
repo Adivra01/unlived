@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/auth-mail.php';
+require_once __DIR__.'/business-api.php';
 $authTransaction=false;
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -10,7 +11,7 @@ header('X-Frame-Options: DENY');
 function answer(int $status, mixed $data=null, ?string $error=null): never {
     global $db,$authTransaction;
     if ($authTransaction) { $db->exec($status<400?'COMMIT':'ROLLBACK');$authTransaction=false; }
-    http_response_code($status);echo json_encode(['data'=>$data,'error'=>$error?['message'=>$error]:null],JSON_UNESCAPED_UNICODE);
+    http_response_code($status);$payload=['data'=>$data,'error'=>$error?['message'=>$error]:null];if(defined('UNLIVED_WAITLIST_COMPAT')){$payload=array_merge($payload,is_array($data)?$data:[]);if($error)$payload['error']=$error;}echo json_encode($payload,JSON_UNESCAPED_UNICODE);
     if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
     if ($status<400 && isset($db)) { try { for($i=0;$i<3;$i++) pumpAuthMail(); } catch(Throwable $e) {} }
     exit;
@@ -44,6 +45,7 @@ try {
     $db->exec('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,email TEXT NOT NULL,email_lookup TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,display_name TEXT NOT NULL,role TEXT NOT NULL,created_at TEXT NOT NULL)');
     $db->exec('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,expires INTEGER NOT NULL)');
     authSchema();
+    initBusiness();
     if (defined('UNLIVED_AUTH_MAINTENANCE')) return;
     if(defined('UNLIVED_MAIL_WORKER')) {for($i=0;$i<10;$i++)pumpAuthMail();exit;}
     $route=parse_url($_SERVER['REQUEST_URI']??'',PHP_URL_PATH);
@@ -51,15 +53,33 @@ try {
     $stmt=$db->prepare('SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires>? AND u.email_verified=1');
     $stmt->execute([hash('sha256',$token),time()]);
     $user=$token!=='' ? ($stmt->fetch(PDO::FETCH_ASSOC) ?: null) : null;
-    if ($route==='/api/data') {
-        $table=$body['table']??''; $action=$body['action']??'';
-        answer(403,null,'Cette fonction sera disponible après conversion du module client.');
+    $refToken=$_COOKIE['unlived_affiliate']??'';
+    if (in_array($route,['/api/data','/api/business','/api/track','/api/waitlist'],true)) {
+        authLimit($route==='/api/track'?'track':(($route==='/api/waitlist'||($route==='/api/data'&&($body['action']??'')==='insert'&&in_array($body['table']??'', ['launch_waitlist','launch_waitlist_feedback','contact_messages'],true)))?'waitlist':'business'),'');
+        $db->exec('BEGIN IMMEDIATE');$authTransaction=true;
+        // Recheck sessions after acquiring the writer lock, including revoked sessions.
+        $stmt=$db->prepare('SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires>? AND u.email_verified=1');$stmt->execute([hash('sha256',$token),time()]);$user=$token!==''?($stmt->fetch(PDO::FETCH_ASSOC)?:null):null;
+        attribution($user,$refToken);
+        if($route==='/api/data')answer(200,dataQuery($body,$user));
+        if($route==='/api/waitlist')answer(200,waitlistAction($body));
+        $ip=$_SERVER['REMOTE_ADDR']??'';
+        if($route==='/api/track') {
+            [$previous]=attribution($user,$refToken);
+            $active=array_column(array_filter(entities('affiliates'),static fn($a)=>$a['status']==='active'),'code');
+            if(!in_array($body['affiliate']??'', $active,true)&&$previous)$body['affiliate']=$previous['code'];
+            $result=trackEvent($body,$user,$ip,$_SERVER['HTTP_USER_AGENT']??'');
+            if(isset($result['recorded'])||isset($result['duplicate'])){[$ref,$newToken]=attribution($user,$refToken,$body['affiliate']??null);if($newToken)setcookie('unlived_affiliate',$newToken,['expires'=>time()+30*86400,'path'=>'/','secure'=>$scheme==='https','httponly'=>true,'samesite'=>'Lax']);}
+            answer(200,$result);
+        }
+        if(($body['action']??'')==='exclude_tracking'){needUser($user,true);excludeIp($ip);setcookie('unlived_analytics_exclude','1',['expires'=>time()+365*86400,'path'=>'/','secure'=>$scheme==='https','httponly'=>true,'samesite'=>'Lax']);answer(200,['excluded'=>true]);}
+        answer(200,businessAction($body,$user));
     }
     if ($route!=='/api/auth') answer(404,null,'Route inconnue.');
     $action=$body['action']??'';
     authLimit($action,strtolower(trim((string)($body['email']??''))));
     $db->exec('BEGIN IMMEDIATE');$authTransaction=true;
     $stmt=$db->prepare('SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires>? AND u.email_verified=1');$stmt->execute([hash('sha256',$token),time()]);$user=$token!==''?($stmt->fetch(PDO::FETCH_ASSOC)?:null):null;
+    if($user){attribution($user,$refToken);if($user['role']==='admin'){excludeIp($_SERVER['REMOTE_ADDR']??'');setcookie('unlived_analytics_exclude','1',['expires'=>time()+365*86400,'path'=>'/','secure'=>$scheme==='https','httponly'=>true,'samesite'=>'Lax']);}}
     if ($action==='session') answer(200,['session'=>$user ? ['user'=>publicUser($user)] : null,'user'=>$user ? publicUser($user) : null]);
     if ($action==='logout') { if ($token!=='') { $stmt=$db->prepare('DELETE FROM sessions WHERE token_hash=?'); $stmt->execute([hash('sha256',$token)]); } cookieToken('',0); answer(200,['session'=>null,'user'=>null]); }
     if ($action==='reset_request' || $action==='resend_verification') {
@@ -86,7 +106,7 @@ try {
         $valid=password_verify($password,$existing?$existing['password_hash']:$dummy);
         if (!$existing || !$valid) answer(403,null,'E-mail ou mot de passe incorrect.');
         if (!(int)$existing['email_verified']) answer(403,null,'Confirme ton adresse e-mail avant de te connecter.');
-        $user=$existing;$newToken=bin2hex(random_bytes(32));$ttl=604800;$stmt=$db->prepare('INSERT INTO sessions VALUES (?,?,?)');$stmt->execute([hash('sha256',$newToken),$user['id'],time()+$ttl]);cookieToken($newToken,$ttl);$public=publicUser($user);answer(200,['session'=>['user'=>$public],'user'=>$public]);
+        $user=$existing;attribution($user,$refToken);if($user['role']==='admin'){excludeIp($_SERVER['REMOTE_ADDR']??'');setcookie('unlived_analytics_exclude','1',['expires'=>time()+365*86400,'path'=>'/','secure'=>$scheme==='https','httponly'=>true,'samesite'=>'Lax']);}$newToken=bin2hex(random_bytes(32));$ttl=604800;$stmt=$db->prepare('INSERT INTO sessions VALUES (?,?,?)');$stmt->execute([hash('sha256',$newToken),$user['id'],time()+$ttl]);cookieToken($newToken,$ttl);$public=publicUser($user);answer(200,['session'=>['user'=>$public],'user'=>$public]);
     }
     if ($action==='update') {
         if (!$user) answer(403,null,'Connexion requise.');
@@ -104,6 +124,7 @@ try {
         $stmt=$db->prepare('SELECT * FROM users WHERE id=?');$stmt->execute([$user['id']]);$public=publicUser($stmt->fetch(PDO::FETCH_ASSOC));answer(200,['session'=>['user'=>$public],'user'=>$public,'message'=>$message]);
     }
     answer(400,null,'Action inconnue.');
-} catch (InvalidArgumentException $e) { answer(400,null,$e->getMessage()); }
+} catch (DomainException $e) { answer(403,null,$e->getMessage()); }
+  catch (InvalidArgumentException $e) { answer(400,null,$e->getMessage()); }
   catch (PDOException $e) { error_log('UNLIVED auth: '.$e->getMessage()); answer(503,null,'Base de comptes indisponible.'); }
   catch (Throwable $e) { error_log('UNLIVED auth: '.$e->getMessage()); answer(500,null,'Le serveur ne peut pas traiter la demande.'); }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Local UNLIVED server: static assets and SQLite-backed language catalogues.
-Accounts, catalogue and waitlist are stored locally in SQLite.
+Development forwards all data requests to the shared HTTPS API by default.
 """
 import argparse
 import os,time,hashlib
@@ -17,6 +17,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 import ipaddress
+import shared_api
 
 def client_ip(peer,headers):
     trusted=[ipaddress.ip_network(value.strip()) for value in os.environ.get('TRUSTED_PROXIES','').split(',') if value.strip()]
@@ -85,9 +86,36 @@ class Handler(SimpleHTTPRequestHandler):
             if incoming and incoming not in {f'http://{host}',origin}:raise PermissionError('Origine interdite.')
             length=int(self.headers.get('Content-Length','0'))
             if not 0<length<=65536:raise ValueError('Requête trop grande.')
-            body=json.loads(self.rfile.read(length))
+            raw_body=self.rfile.read(length)
+            upstream=getattr(self.server,'shared_api_origin',None)
+            if upstream:
+                path=urlsplit(self.path).path
+                if path not in shared_api.PATHS:raise ValueError('Route API inconnue.')
+                try:
+                    status,content_type,content,cookies=shared_api.forward(upstream,path,raw_body,self.headers.get('Cookie',''))
+                except Exception:
+                    self.respond_json({'data':None,'error':{'message':'Le serveur partagé est indisponible. Aucune donnée enregistrée localement.'}},status=502);return
+                if 'application/json' not in content_type:
+                    self.respond_json({'data':None,'error':{'message':'Cette fonction API n’est pas disponible sur le serveur partagé.'}},status=502);return
+                self.send_response(status)
+                self.send_header('Content-Type',content_type)
+                self.send_header('Content-Length',str(len(content)))
+                self.send_header('Cache-Control','no-store')
+                for cookie in cookies:self.send_header('Set-Cookie',cookie)
+                self.end_headers();self.wfile.write(content);return
+            body=json.loads(raw_body)
             if not isinstance(body,dict):raise ValueError('Requête invalide.')
             path=urlsplit(self.path).path
+            if path=='/waitlist-api.php':
+                action=body.pop('action',None)
+                if action not in ('signup','feedback'):raise ValueError('Action inconnue.')
+                if action=='signup':
+                    import uuid
+                    body['feedback_token']=str(uuid.uuid4())
+                table='launch_waitlist' if action=='signup' else 'launch_waitlist_feedback'
+                with database.connect() as db:
+                    database.query(db,{'table':table,'action':'insert','values':body},None)
+                self.respond_json({'ok':True,'feedback_token':body.get('feedback_token')});return
             cookie=SimpleCookie();cookie.load(self.headers.get('Cookie',''))
             token=cookie['unlived_session'].value if 'unlived_session' in cookie else ''
             ip=client_ip(self.client_address[0],self.headers)
@@ -202,6 +230,8 @@ class Handler(SimpleHTTPRequestHandler):
         if route.startswith('/api/translations/'):
             language=route.rsplit('/',1)[-1]
             if language not in LANGUAGES:self.send_error(404);return
+            if getattr(self.server,'shared_api_origin',None):
+                self.respond_json(json.loads((ROOT/'locales'/f'{language}.json').read_text()),head);return
             with sqlite3.connect(f'file:{DB}?mode=ro', uri=True) as db:
                 rows=db.execute('SELECT source,value FROM translations WHERE language=?',(language,)).fetchall()
             self.respond_json(dict(rows),head);return
@@ -226,12 +256,19 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--port',type=int,default=int(os.environ.get('PORT','8081')))
     parser.add_argument('--host',default=os.environ.get('HOST','127.0.0.1'))
+    parser.add_argument('--upstream',default=os.environ.get('UNLIVED_API_ORIGIN','https://unlived.club'))
+    parser.add_argument('--standalone',action='store_true',help='Serveur de données autonome (VPS uniquement)')
     args=parser.parse_args()
-    seed()
-    auth_service.start_worker()
+    upstream=None if args.standalone else shared_api.validate_origin(args.upstream)
+    if upstream and args.host not in ('localhost','127.0.0.1','::1'):
+        parser.error('Le proxy de développement doit rester lié à localhost.')
+    if not upstream:
+        seed()
+        auth_service.start_worker()
     if os.environ.get("PUBLIC_ORIGIN"):
         import runpy
         runpy.run_path(str(ROOT/"scripts"/"prepare-seo.py"))["prepare"](os.environ["PUBLIC_ORIGIN"])
     server=ThreadingHTTPServer((args.host,args.port),Handler)
-    print(f'UNLIVED: http://{args.host}:{args.port}/index.html — SQLite translations ready',flush=True)
+    server.shared_api_origin=upstream
+    print(f'UNLIVED: http://{args.host}:{args.port}/index.html — données : {upstream or "serveur autonome"}',flush=True)
     server.serve_forever()

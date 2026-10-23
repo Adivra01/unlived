@@ -9,6 +9,7 @@
   let currentUser = null;
   let pendingFavoriteHandled=false;
   let dashboardLoading=null;
+  let syncVersion=0;
   let adminRedirecting=false;
   const accountRoles=new Map();
   const accountUrl=new URL('compte.html',location.href).href.split(/[?#]/)[0];
@@ -75,7 +76,15 @@
     $('#client-recent-orders').innerHTML=orders.length?orders.slice(0,4).map(o=>`<div class="client-recent-order"><div><strong>Commande #${escape(String(o.order_number).padStart(4,'0'))}</strong><small>${escape(new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',year:'numeric'}).format(new Date(o.created_at)))}</small></div><span class="order-status-pill">${escape(statusLabel(o.status))}</span></div>`).join(''):'<p class="account-muted">Aucune commande pour le moment. Tes prochaines commandes et leur suivi apparaîtront ici.</p>';
     list.innerHTML = data?.length ? data.map(order => `<article class="order-card"><div class="order-card-top"><b>Commande #${String(order.order_number).padStart(4,'0')}</b><span class="order-status-pill">${statusLabel(order.status)}</span></div><div class="order-card-lines">${(order.order_items || []).map(item=>`<p><span>${escape(item.product_title)} · ${escape(item.variant_name)} × ${item.quantity}</span><small>${item.unit_price_cents == null ? 'Prix à confirmer' : new Intl.NumberFormat('fr-FR',{style:'currency',currency:order.currency || 'EUR'}).format(item.unit_price_cents/100)}</small></p>`).join('')}</div><div class="order-card-bottom"><time>${new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(order.created_at))}</time><strong>${order.total_cents == null ? 'Total à confirmer' : new Intl.NumberFormat('fr-FR',{style:'currency',currency:order.currency || 'EUR'}).format(order.total_cents/100)}</strong></div></article>`) : '<div class="account-empty-state order-empty"><span>01</span><p>Aucune commande pour le moment.</p><a class="text-link" href="boutique.html">La première commence ici <b></b></a></div>';
   }
+  function clearPrivateData(){
+    ['#account-favorites','#account-orders'].forEach(id=>{$(id).textContent='';});
+    ['#client-favorites-total','#client-orders-total','#client-orders-active','#client-commission'].forEach(id=>$(id).textContent='—');
+    ['#new-email','#current-password-email','#current-password-change','#new-password','#confirm-password'].forEach(id=>{if($(id))$(id).value='';});
+    $('#favorites-count').textContent='0';$('#customer-name').textContent='';$('#customer-email').textContent='';$('#client-sidebar-name').textContent='';$('#client-avatar').textContent='';
+    $('#client-recent-orders').textContent='Chargement…';$('#client-affiliate-summary').textContent='Chargement…';
+  }
   async function showDashboard(user) {
+    if(currentUser?.id!==user.id)clearPrivateData();
     document.body.classList.add('client-workspace');
     $('.account-sidebar').hidden = false;
     if(currentUser?.id!==user.id){$('#account-favorites').innerHTML='<p class="account-empty">Chargement de tes favoris…</p>';$('#account-orders').innerHTML='<p class="account-empty">Chargement de tes commandes…</p>';$('#favorites-count').textContent='0';}
@@ -97,13 +106,15 @@
     if (pendingFavorite && !pendingFavoriteHandled && !customer.state.favoriteIds.has(pendingFavorite)) {
       pendingFavoriteHandled=true;
       const { error } = await client.from('customer_favorites').upsert({user_id:user.id, product_id:pendingFavorite},{onConflict:'user_id,product_id',ignoreDuplicates:true});
-      if (!error) { await customer.loadUser(); await renderFavorites(); customer.toast('La pièce a rejoint tes favoris.'); }
+      if(currentUser?.id!==user.id)return;
+      if (!error) { const url=new URL(location.href);url.searchParams.delete('favorite');history.replaceState(null,'',url.pathname+url.search+url.hash);await customer.loadUser(); await renderFavorites(); customer.toast('La pièce a rejoint tes favoris.'); }
     }
   }
   async function showAuth() {
     document.body.classList.remove('client-workspace');
     document.dispatchEvent(new Event('unlived:client-signed-out'));
     currentUser = null;
+    clearPrivateData();
     $('.account-sidebar').hidden = true;
     $('#customer-dashboard').hidden = true;
     $('#auth-panel').hidden = false;
@@ -175,13 +186,15 @@
     if (tab) { document.querySelectorAll('.account-tabs a').forEach(item=>item.classList.toggle('is-active',item===tab)); }
   });
   window.addEventListener('unlived:favorites-changed', renderFavorites);
-  const syncSession = async (event, user) => {
+  const syncSession = async (event, user, version=++syncVersion) => {
+    if(version!==syncVersion)return;
     if(!user){showAuth();return;}
     if(adminRedirecting)return true;
     if(!accountRoles.has(user.id)){
       accountRoles.set(user.id,user.role?Promise.resolve({data:user.role==='admin'?{user_id:user.id}:null,error:null}):client.from('admin_users').select('user_id').eq('user_id',user.id).maybeSingle());
     }
     const access=await accountRoles.get(user.id);
+    if(version!==syncVersion)return;
     if(access.error){accountRoles.delete(user.id);message('#auth-message','Impossible de vérifier ton compte. Réessaie.',true);return true;}
     if(access.data){
       adminRedirecting=true;
@@ -192,8 +205,9 @@
       return true;
     }
     if(currentUser?.id!==user.id || event==='USER_UPDATED'){
-      if(!dashboardLoading){dashboardLoading=showDashboard(user).catch(()=>message('#auth-message','Ton espace ne peut pas être chargé. Réessaie.',true)).finally(()=>{dashboardLoading=null});}
-      await dashboardLoading;
+      if(!dashboardLoading||dashboardLoading.userId!==user.id){const pending={userId:user.id};pending.promise=showDashboard(user).catch(()=>{if(currentUser?.id===user.id)message('#auth-message','Ton espace ne peut pas être chargé. Réessaie.',true);}).finally(()=>{if(dashboardLoading===pending)dashboardLoading=null;});dashboardLoading=pending;}
+      await dashboardLoading.promise;
+      if(version!==syncVersion)return;
     }
     if(event==='PASSWORD_RECOVERY' || new URLSearchParams(location.search).get('recovery')==='1'){
       $('#recovery-note').hidden=false;
@@ -201,7 +215,9 @@
     }
   };
   client.auth.onAuthStateChange((event,session) => {
-    window.setTimeout(()=>syncSession(event,session?.user),0);
+    const version=++syncVersion;
+    window.setTimeout(()=>syncSession(event,session?.user,version),0);
   });
-  client.auth.getSession().then(({data})=>syncSession('INITIAL_SESSION',data.session?.user)).catch(()=>message('#auth-message','La connexion est indisponible.',true));
+  const initialVersion=syncVersion;
+  client.auth.getSession().then(({data})=>{if(initialVersion===syncVersion)return syncSession('INITIAL_SESSION',data.session?.user);}).catch(()=>message('#auth-message','La connexion est indisponible.',true));
 })();

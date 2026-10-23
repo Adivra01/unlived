@@ -1,0 +1,60 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import os from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+// Install @php-wasm/cli outside the repository and set UNLIVED_PHP_WASM_MODULES.
+const modules=process.env.UNLIVED_PHP_WASM_MODULES;
+if(!modules)throw new Error('Définir UNLIVED_PHP_WASM_MODULES vers le dossier node_modules de @php-wasm/cli.');
+const {PHP}=await import(pathToFileURL(path.join(modules,'@php-wasm/universal/index.js')));
+const {loadNodeRuntime}=await import(pathToFileURL(path.join(modules,'@php-wasm/node/index.js')));
+const php=new PHP(await loadNodeRuntime('8.3',{emscriptenOptions:{processId:3}}));
+const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+php.mkdir('/project');php.mkdir('/project/data');php.mkdir('/project/locales');
+php.writeFile('/project/locales/fr.json',fs.readFileSync(root+'/locales/fr.json'));
+for(const file of ['api.php','auth-mail.php','business-api.php','waitlist-api.php','waitlist-export.php','auth-test-import.php','waitlist-admin.php','translations.php'])php.writeFile('/project/'+file,fs.readFileSync(root+'/'+file));
+php.writeFile('/project/waitlist-admin-hash.php',"<?php return hash('sha256','FixtureCode');");
+php.writeFile('/project/data/catalog.json',fs.readFileSync(root+'/data/catalog.json'));
+await php.run({code:`<?php define('UNLIVED_AUTH_MAINTENANCE',true);require '/project/api.php';foreach(['admin','client'] as $role){$email=$role.'@example.com';$s=$db->prepare('INSERT INTO users(id,email,email_lookup,password_hash,display_name,role,created_at,email_verified) VALUES (?,?,?,?,?,?,?,1)');$s->execute([$role,cryptField($email),hash_hmac('sha256',$email,$key),hashAuthPassword('StrongPassword123!'),cryptField('Test'),$role,gmdate('c')]);}`});
+async function request(path,payload,cookie='',override={}){
+ const r=await php.run({scriptPath:'/project/'+(path==='/waitlist-api.php'?'waitlist-api.php':'api.php'),relativeUri:path,protocol:'https',method:'POST',headers:{host:'unlived.club','content-type':'application/json','x-unlived-request':'1',origin:'https://unlived.club',cookie,...override},body:new TextEncoder().encode(JSON.stringify(payload)),$_SERVER:{HTTPS:'on',REMOTE_ADDR:'198.51.100.8',HTTP_HOST:'unlived.club',REQUEST_URI:path}});
+ return {status:r.httpStatusCode,data:JSON.parse(r.text),headers:r.headers};
+}
+const translation=await php.run({scriptPath:'/project/translations.php',relativeUri:'/api/translations/fr',method:'GET',$_SERVER:{REQUEST_URI:'/api/translations/fr'}});
+assert.equal(translation.httpStatusCode,200);assert.ok(Object.keys(JSON.parse(translation.text)).length>0);
+let r=await request('/api/auth',{action:'login',email:'admin@example.com',password:'bad'});assert.equal(r.status,403);
+r=await request('/api/auth',{action:'login',email:'admin@example.com',password:'StrongPassword123!'});assert.equal(r.status,200);assert.equal(r.data.data.user.role,'admin');
+const cookie=r.headers['set-cookie'].map(c=>c.split(';')[0]).join('; ');assert.ok(cookie.includes('unlived_session='));assert.ok(r.headers['set-cookie'].some(c=>/httponly/i.test(c)&&/secure/i.test(c)));
+r=await request('/api/auth',{action:'session'},cookie);assert.equal(r.data.data.user.role,'admin');
+r=await request('/api/business',{action:'dashboard'},cookie);assert.equal(r.status,200);assert.equal(r.data.data.users.length,2);
+r=await request('/api/business',{action:'public_settings'});assert.equal(r.status,200);
+r=await request('/api/data',{table:'products',action:'select'});assert.ok(r.data.data.length>0);
+r=await request('/api/business',{action:'overview'});assert.equal(r.status,403);
+r=await request('/api/business',{action:'overview'},cookie,{origin:'https://evil.example'});assert.equal(r.status,403);
+r=await request('/waitlist-api.php',{action:'signup',consent:true,first_name:'Alice',last_name:'Test',email:'alice@example.com',concept_slug:'day-one-noir',selected_size:'M'});assert.equal(r.status,200);assert.equal(r.data.data.ok,true);
+const token=r.data.data.feedback_token;
+r=await request('/waitlist-api.php',{action:'feedback',feedback_token:token,interest_level:4,what_appealed:'Le design noir',what_to_improve:'Plus de tailles'});assert.equal(r.status,200);
+r=await request('/api/business',{action:'overview'},cookie);assert.equal(r.data.data.waitlist.answered,1);
+const excel=await php.run({scriptPath:'/project/waitlist-admin.php',relativeUri:'/waitlist-admin.php?export=xlsx',protocol:'https',method:'GET',headers:{host:'unlived.club',cookie},$_SERVER:{HTTPS:'on',HTTP_HOST:'unlived.club',REQUEST_URI:'/waitlist-admin.php?export=xlsx'}});
+assert.equal(excel.httpStatusCode,200);assert.equal(excel.bytes[0],0x50);assert.equal(excel.bytes[1],0x4b);
+r=await request('/api/auth',{action:'logout'},cookie);assert.equal(r.status,200);
+r=await request('/api/business',{action:'dashboard'},cookie);assert.equal(r.status,403);
+r=await request('/api/auth',{action:'signup',email:'new@example.com',password:'weak',display_name:'New'});assert.equal(r.status,400);
+r=await request('/api/auth',{action:'signup',email:'new@example.com',password:'NewPassword123!',display_name:'New'});assert.equal(r.status,200);assert.equal(r.data.data.session,null);
+r=await request('/api/auth',{action:'login',email:'new@example.com',password:'NewPassword123!'});assert.equal(r.status,403);
+async function challenge(purpose){
+ const result=await php.run({code:`<?php define('UNLIVED_AUTH_MAINTENANCE',true);require '/project/api.php';foreach($db->query('SELECT payload FROM auth_outbox')->fetchAll(PDO::FETCH_COLUMN) as $raw){$p=json_decode(openField($raw),true);if(preg_match('/action=${purpose}&token=([A-Za-z0-9_-]{43})/',$p['text'],$m))echo $m[1];}`});
+ assert.match(result.text,/^[A-Za-z0-9_-]{43}$/);return result.text;
+}
+const verify=await challenge('verify');r=await request('/api/auth',{action:'verify_email',token:verify});assert.equal(r.status,200);
+r=await request('/api/auth',{action:'verify_email',token:verify});assert.equal(r.status,400);
+r=await request('/api/auth',{action:'login',email:'new@example.com',password:'NewPassword123!'});assert.equal(r.status,200);
+const oldCookie=r.headers['set-cookie'].map(c=>c.split(';')[0]).join('; ');
+r=await request('/api/auth',{action:'reset_request',email:'new@example.com'});assert.equal(r.status,200);
+const reset=await challenge('reset');r=await request('/api/auth',{action:'reset_password',token:reset,password:'ChangedPassword123!'});assert.equal(r.status,200);
+r=await request('/api/auth',{action:'reset_password',token:reset,password:'ChangedPassword123!'});assert.equal(r.status,400);
+r=await request('/api/auth',{action:'session'},oldCookie);assert.equal(r.data.data.session,null);
+r=await request('/api/auth',{action:'login',email:'new@example.com',password:'ChangedPassword123!'});assert.equal(r.status,200);
+const out=await php.run({code:`<?php require '/project/waitlist-export.php';exportWaitlistWorkbook([['email'=>'=danger@example.com','first_name'=>'Élodie','last_name'=>'Test','phone'=>'+22300123','interest_level'=>5,'what_appealed'=>'Très beau','what_to_improve'=>'Plus de tailles']]);`});
+fs.writeFileSync(path.join(os.tmpdir(),'unlived-php-test-export.xlsx'),out.bytes);
+console.log('PHP HTTP: login, secure cookie, session, admin permissions, CSRF, public catalogue, waitlist, feedback, overview logout, email verification, password reset and one-use tokens passed. XLSX generated.');php.exit();

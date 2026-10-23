@@ -950,5 +950,13 @@
   "Minimum {{0}}. Délai de validation : {{1}} jours après paiement confirmé. Les paiements et versements ne sont pas encore ouverts.": "Minimum {{0}}. Validation period: {{1}} days after confirmed payment. Payments and payouts are not yet available.",
   "Présente les pièces qui te parlent. Le programme prévoit {{0}}% sur les commandes éligibles, payées et non remboursées, après approbation de ta candidature.": "Share the pieces that speak to you. The program offers {{0}}% on eligible, paid, non-refunded orders after your application is approved.",
   "J’accepte les conditions : attribution au dernier lien affilié consenti pendant {{0}} jours, hors achats personnels, frais de livraison et taxes. Validation après {{1}} jours ; les paiements ne sont pas encore ouverts.": "I accept the terms: attribution to the last consented affiliate link for {{0}} days, excluding personal purchases, shipping and taxes. Validation after {{1}} days; payouts are not yet available.",
-  "Ta demande de fermeture a été enregistrée. Statut : {{0}}": "Your account closure request has been received. Status: {{0}}"
+  "Ta demande de fermeture a été enregistrée. Statut : {{0}}": "Your account closure request has been received. Status: {{0}}",
+  "UNLIVED — T-shirts DAY ONE, le premier pas t’appartient": "UNLIVED — DAY ONE T-shirts, your first step",
+  "Découvre les t-shirts UNLIVED, pensés comme un rappel de ce que tu veux commencer. Choisis ta pièce et rejoins la liste d’intérêt, sans achat ni engagement.": "Discover UNLIVED T-shirts, a reminder of what you want to start. Choose your piece and join the interest list, with no purchase or commitment.",
+  "Rejoins la liste d’intérêt UNLIVED pour la pièce et la taille que tu as choisies. Inscription gratuite, sans compte, sans paiement et sans engagement.": "Join the UNLIVED interest list for your chosen piece and size. Free signup, no account, payment or commitment.",
+  "Inscris-toi pour suivre la pièce qui t’intéresse. C’est gratuit, sans compte et sans paiement. Cela ne t’engage pas à acheter.": "Sign up for updates on the piece you like. It is free, with no account or payment. There is no obligation to buy.",
+  "Le questionnaire est facultatif.": "The questionnaire is optional.",
+  "Continuer sans répondre": "Continue without answering",
+  "Ton inscription pour": "Your signup for",
+  "est bien enregistrée. Si tu le souhaites, ton avis nous aiderait à mieux comprendre ce qui compte pour toi.": "has been saved. If you wish, your feedback can help us understand what matters to you."
 }

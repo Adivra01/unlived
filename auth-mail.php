@@ -33,7 +33,9 @@ function authSchema(): void {
 function authLimit(string $action,string $email): void {
     global $db,$key;if (in_array($action,['session','logout'],true)) return;
     $now=time();$policies=[['ip:'.($_SERVER['REMOTE_ADDR']??'unknown'),20,900]];
-    if (in_array($action,['signup','reset_request','resend_verification'],true)) $policies=[['ip:'.($_SERVER['REMOTE_ADDR']??'unknown'),10,900],['email:'.$email,3,3600]];
+    if(in_array($action,['business','track'],true))$policies=[['ip:'.($_SERVER['REMOTE_ADDR']??'unknown'),180,60]];
+    elseif($action==='waitlist')$policies=[['ip:'.($_SERVER['REMOTE_ADDR']??'unknown'),25,300]];
+    elseif (in_array($action,['signup','reset_request','resend_verification'],true)) $policies=[['ip:'.($_SERVER['REMOTE_ADDR']??'unknown'),10,900],['email:'.$email,3,3600]];
     elseif ($action==='login') $policies[]=['email:'.$email,10,900];
     $db->exec('BEGIN IMMEDIATE');
     try {

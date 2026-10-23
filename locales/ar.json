@@ -950,5 +950,13 @@
   "Minimum {{0}}. Délai de validation : {{1}} jours après paiement confirmé. Les paiements et versements ne sont pas encore ouverts.": "الحد الأدنى {{0}}. مدة التأكيد: {{1}} يومًا بعد تأكيد الدفع. الدفع والسحب غير متاحين بعد.",
   "Présente les pièces qui te parlent. Le programme prévoit {{0}}% sur les commandes éligibles, payées et non remboursées, après approbation de ta candidature.": "شارك القطع التي تعبّر عنك. يمنح البرنامج {{0}}٪ على الطلبات المؤهلة والمدفوعة وغير المستردة بعد الموافقة على طلبك.",
   "J’accepte les conditions : attribution au dernier lien affilié consenti pendant {{0}} jours, hors achats personnels, frais de livraison et taxes. Validation après {{1}} jours ; les paiements ne sont pas encore ouverts.": "أوافق على الشروط: تُنسب العملية إلى آخر رابط شريك تمت الموافقة عليه لمدة {{0}} يومًا، باستثناء المشتريات الشخصية والشحن والضرائب. يتم التأكيد بعد {{1}} يومًا؛ والسحب غير متاح بعد.",
-  "Ta demande de fermeture a été enregistrée. Statut : {{0}}": "تم تسجيل طلب إغلاق حسابك. الحالة: {{0}}"
+  "Ta demande de fermeture a été enregistrée. Statut : {{0}}": "تم تسجيل طلب إغلاق حسابك. الحالة: {{0}}",
+  "UNLIVED — T-shirts DAY ONE, le premier pas t’appartient": "UNLIVED — قمصان DAY ONE، خطوتك الأولى",
+  "Découvre les t-shirts UNLIVED, pensés comme un rappel de ce que tu veux commencer. Choisis ta pièce et rejoins la liste d’intérêt, sans achat ni engagement.": "اكتشف قمصان UNLIVED، تذكيرًا بما تريد أن تبدأه. اختر قطعتك وانضم إلى قائمة الاهتمام، دون شراء أو التزام.",
+  "Rejoins la liste d’intérêt UNLIVED pour la pièce et la taille que tu as choisies. Inscription gratuite, sans compte, sans paiement et sans engagement.": "انضم إلى قائمة اهتمام UNLIVED بالقطعة والمقاس اللذين اخترتهما. تسجيل مجاني، دون حساب أو دفع أو التزام.",
+  "Inscris-toi pour suivre la pièce qui t’intéresse. C’est gratuit, sans compte et sans paiement. Cela ne t’engage pas à acheter.": "سجّل لمتابعة القطعة التي تهمك. التسجيل مجاني، دون حساب أو دفع، ولا يلزمك بالشراء.",
+  "Le questionnaire est facultatif.": "الاستبيان اختياري.",
+  "Continuer sans répondre": "المتابعة دون إجابة",
+  "Ton inscription pour": "تسجيلك للقطعة",
+  "est bien enregistrée. Si tu le souhaites, ton avis nous aiderait à mieux comprendre ce qui compte pour toi.": "تم حفظه. إذا رغبت، سيساعدنا رأيك على فهم ما يهمك."
 }

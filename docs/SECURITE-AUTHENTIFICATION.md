@@ -47,7 +47,9 @@ php /chemin/prive/du/projet/scripts/send-auth-emails.php
 ```
 
 Ce script refuse toute exécution depuis HTTP. La clé `.env` doit être renseignée séparément sur l’hébergement
-puisqu’elle n’est pas déployée par Git. Les bases PHP et Python restent distinctes.
+puisqu’elle n’est pas déployée par Git. Le backend PHP centralise les données métier dans `auth.sqlite3` et reprend l’ancienne waitlist
+dans une migration atomique. La prévisualisation locale relaie vers cette API ; les anciennes bases
+Python ne sont ni utilisées dans ce mode, ni copiées automatiquement sur Hostinger.
 
 ## Audit local et tests
 
@@ -65,7 +67,11 @@ reprise des e-mails. Les tests existants couvrent aussi produits, disponibilité
 
 Les contrôles du DOM vérifient l’absence de requête lors du simple chargement d’un lien, le retrait du jeton
 de l’URL, la confirmation explicite et l’accord des deux mots de passe. La syntaxe PHP 8.3 est analysée,
-mais l’exécution PHP/Apache et la tâche cron ne sont pas validées ici, faute d’interpréteur PHP local.
+et le backend est exécuté en PHP 8.3 WebAssembly avec SQLite/OpenSSL sur des bases temporaires :
+19 tests métier, plus les parcours HTTP de session, contrôle d’origine, confirmation e-mail,
+récupération, jetons à usage unique et export XLSX. Voir `scripts/test-php-backend.php` et
+`scripts/test-php-http.mjs`. Apache Hostinger, la tâche cron et les envois depuis cet hébergement
+restent à vérifier après déploiement.
 
 Protections renforcées : limites de tentatives persistantes même après un échec, vérification de session
 sous transaction lors des changements sensibles, limitation de l’énumération, CSP stricte sur la page de

@@ -62,8 +62,8 @@
   async function load(lang){
     if(bundles.has(lang))return bundles.get(lang);
     let response;
-    try{response=await fetch(`/api/translations/${lang}`,{signal:AbortSignal.timeout(1800)});if(!response.ok)throw Error();const data=await response.json();bundles.set(lang,data);return data}catch{}
-    response=await fetch(`locales/${lang}.json`);if(!response.ok)throw Error('Missing language');
+    try{response=await fetch(`/api/translations/${lang}?v=20261023r`,{signal:AbortSignal.timeout(1800)});if(!response.ok)throw Error();const data=await response.json();bundles.set(lang,data);return data}catch{}
+    response=await fetch(`locales/${lang}.json?v=20261023r`);if(!response.ok)throw Error('Missing language');
     const data=await response.json();bundles.set(lang,data);return data;
   }
   async function setLanguage(lang,manual=false){

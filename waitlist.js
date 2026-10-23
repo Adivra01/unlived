@@ -1,12 +1,10 @@
 (() => {
   const form = document.querySelector('#waitlist-form');
   if (!form) return;
-  const client = window.UNLIVEDCustomer?.client;
-  const hosted = !['localhost','127.0.0.1'].includes(location.hostname);
   const phpRequest = async (action, values) => {
     const response = await fetch('waitlist-api.php', {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-UNLIVED-Request':'1'}, body:JSON.stringify({action,...values})});
     const result = await response.json();
-    return result.ok ? {data:result} : {error:{message:result.error || 'Le serveur ne répond pas.',code:result.code}};
+    return result.data?.ok ? {data:result.data} : {error:{message:(typeof result.error === 'string' ? result.error : result.error?.message) || 'Le serveur ne répond pas.',code:result.code}};
   };
   const select = document.querySelector('#waitlist-concept-select');
   const conceptRadios = [...document.querySelectorAll('[name="waitlist-concept"]')];
@@ -38,7 +36,6 @@
     const status = document.querySelector('#waitlist-status');
     const submit = document.querySelector('#waitlist-submit');
     if (form.elements.website.value) { setStatus(status, 'Merci, ton intérêt est noté.'); return; }
-    if (!hosted && !client) { setStatus(status, 'La liste ne répond pas pour le moment. Réessaie dans quelques instants.', true); return; }
     submit.disabled = true;
     setStatus(status, 'Enregistrement de ton intérêt…');
     const data = new FormData(form);
@@ -58,14 +55,14 @@
       utm_content: params.get('utm_content')
     };
     try {
-      const { error, data: saved } = hosted ? await phpRequest('signup', row) : await client.from('launch_waitlist').insert(row);
+      const { error, data: saved } = await phpRequest('signup', row);
       if (error) {
         if (error.code === '23505') setStatus(status, 'Cette adresse est déjà inscrite pour ce concept. Merci de ton intérêt.', true);
         else setStatus(status, error.message || 'On n’a pas pu enregistrer ton inscription. Vérifie ta connexion puis réessaie.', true);
         submit.disabled = false;
         return;
       }
-      if (hosted) feedbackToken = saved.feedback_token;
+      feedbackToken = saved.feedback_token;
       document.dispatchEvent(new Event('unlived:waitlist-success'));
       document.querySelector('#waitlist-thanks-name').textContent = `${row.first_name}.`;
       document.querySelector('#waitlist-thanks-concept').textContent = names[row.concept_slug] || 'le concept choisi';
@@ -85,7 +82,7 @@
     if (!feedbackForm.reportValidity()) return;
     const status = document.querySelector('#feedback-status');
     const button = feedbackForm.querySelector('button[type="submit"]');
-    if ((!hosted && !client) || !feedbackToken) { setStatus(status, 'Cet avis ne peut pas être envoyé. Inscris-toi à nouveau pour continuer.', true); return; }
+    if (!feedbackToken) { setStatus(status, 'Cet avis ne peut pas être envoyé. Inscris-toi à nouveau pour continuer.', true); return; }
     button.disabled = true;
     setStatus(status, 'Envoi de ton avis…');
     const data = new FormData(feedbackForm);
@@ -96,7 +93,7 @@
         what_appealed: String(data.get('what_appealed')).trim(),
         what_to_improve: String(data.get('what_to_improve')).trim()
       };
-      const { error } = hosted ? await phpRequest('feedback', feedback) : await client.from('launch_waitlist_feedback').insert(feedback);
+      const { error } = await phpRequest('feedback', feedback);
       if (error) {
         setStatus(status, error.code === '23505' ? 'Ton avis a déjà été enregistré. Merci !' : 'On n’a pas pu enregistrer ton avis. Réessaie dans un instant.', error.code !== '23505');
         if (error.code === '23505') button.hidden = true; else button.disabled = false;

@@ -37,6 +37,7 @@
     }
   };
   let authLoadVersion=0;
+  let authEpoch=0;
   async function loadUser() {
     const version=++authLoadVersion;
     const { data } = await client.auth.getUser();
@@ -61,10 +62,12 @@
       window.location.href = `compte.html?return=${encodeURIComponent(returnTo)}&favorite=${encodeURIComponent(productId)}`;
       return;
     }
+    const userId=state.user.id,epoch=authEpoch;
     const exists = state.favoriteIds.has(productId);
     const result = exists
       ? await client.from('customer_favorites').delete().eq('user_id', state.user.id).eq('product_id', productId)
       : await client.from('customer_favorites').insert({ user_id: state.user.id, product_id: productId });
+    if(state.user?.id!==userId||epoch!==authEpoch)return;
     if (result.error) { toast('Cette action n’a pas pu être enregistrée. Réessaie.'); return; }
     if (exists) state.favoriteIds.delete(productId); else state.favoriteIds.add(productId);
     syncButtons();
@@ -81,6 +84,7 @@
     toggleFavorite(button.dataset.favoriteProductId);
   });
   client.auth.onAuthStateChange((event) => {
+    authEpoch++;authLoadVersion++;state.favoriteIds.clear();syncButtons();
     if(event==='SIGNED_OUT'){authLoadVersion++;state.user=null;state.favoriteIds.clear();syncButtons();return;}
     if(['INITIAL_SESSION','SIGNED_IN','USER_UPDATED'].includes(event))window.setTimeout(() => loadUser().catch(() => syncButtons()), 0);
   });

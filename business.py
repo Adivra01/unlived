@@ -95,7 +95,6 @@ def overview(db,days=30):
  feedback={row.get('feedback_token'):row for row in d.rows(db,'launch_waitlist_feedback') if row.get('feedback_token')}
  for item in waitlist:
   if item.get('created_at','')[:10]>=start:interest[item.get('concept_slug') or item.get('product_id') or 'Inconnu']+=1
- favorites=Counter(item.get('product_id') for item in d.rows(db,'customer_favorites') if item.get('created_at','')[:10]>=start)
  def ranked(counter):return [{'name':product_names.get(k) or k or 'Inconnu','count':v} for k,v in counter.most_common(10)]
  daily_revenue=[{'day':day['day'],'revenue_cents':sum(o.get('total_cents') or 0 for o in period if (o.get('paid_at') or o.get('created_at',''))[:10]==day['day'])} for day in traffic['daily']]
  registrations=[u for u in db.execute("SELECT created_at FROM users WHERE role='client'") if u['created_at'][:10]>=start]
@@ -104,7 +103,7 @@ def overview(db,days=30):
   reply=feedback.get(row.get('feedback_token'))
   recent.append({**{k:row.get(k) for k in ('id','first_name','last_name','email','concept_slug','selected_size','created_at')},'feedback':{k:reply.get(k) for k in ('interest_level','what_appealed','what_to_improve','created_at')} if reply else None})
  waitlist_stats={'total':len(waitlist),'period':sum(interest.values()),'answered':sum(1 for row in waitlist if row.get('feedback_token') in feedback),'recent':recent,'source':'local'}
- return {'days':days,'traffic':traffic,'total_visitors':len({e['visitor'] for e in visits}),'total_views':len(visits),'revenue_cents':sum(o.get('total_cents') or 0 for o in paid),'period_revenue_cents':sum(o.get('total_cents') or 0 for o in period),'paid_orders':len(period),'average_order_cents':round(sum(o.get('total_cents') or 0 for o in period)/len(period)) if period else 0,'daily_revenue':daily_revenue,'registrations':len(registrations),'interest_count':sum(interest.values()),'favorites_count':sum(favorites.values()),'best_sellers':ranked(sold),'interest':ranked(interest),'favorites':ranked(favorites),'waitlist':waitlist_stats,'retention_days':395}
+ return {'days':days,'traffic':traffic,'total_visitors':len({e['visitor'] for e in visits}),'total_views':len(visits),'revenue_cents':sum(o.get('total_cents') or 0 for o in paid),'period_revenue_cents':sum(o.get('total_cents') or 0 for o in period),'paid_orders':len(period),'average_order_cents':round(sum(o.get('total_cents') or 0 for o in period)/len(period)) if period else 0,'daily_revenue':daily_revenue,'registrations':len(registrations),'interest_count':sum(interest.values()),'best_sellers':ranked(sold),'interest':ranked(interest),'waitlist':waitlist_stats,'retention_days':395}
 def balance(db,affiliate):
  # Only server-confirmed paid orders enter the commission balance; no client can confirm payment.
  orders=[o for o in d.rows(db,'orders') if o.get('affiliate_code')==affiliate['code'] and o.get('payment_verified') is True and o.get('payment_status')=='paid' and o.get('customer_id')!=affiliate['user_id'] and o.get('currency','EUR')=='EUR' and o.get('status') not in ('cancelled','refunded')]
@@ -127,7 +126,7 @@ def handle(db,body,user):
  require(user)
  if action=='account':
   aff=next(iter(owned(db,'affiliates',user)),None)
-  return {'role':user['role'],'affiliate':aff,'balance':balance(db,aff) if aff else None,'stats':stats(db,30,aff['code']) if aff else None,'cart':next(iter(owned(db,'carts',user)),{}).get('items',[]),'closure':owned(db,'closure_requests',user),'settings':config(db)}
+  return {'public_origin':'https://unlived.club','user_id':user['id'],'role':user['role'],'affiliate':aff,'balance':balance(db,aff) if aff else None,'stats':stats(db,30,aff['code']) if aff else None,'cart':next(iter(owned(db,'carts',user)),{}).get('items',[]),'closure':owned(db,'closure_requests',user),'settings':config(db)}
  if action=='cart_load':
   cart=next(iter(owned(db,'carts',user)),{}).get('items',[]);products={p['id']:p for p in d.rows(db,'products')};variants={p['id']:p for p in d.rows(db,'product_variants')};media=d.rows(db,'product_media');result=[]
   for x in cart:
@@ -137,6 +136,7 @@ def handle(db,body,user):
    result.append({**x,'title':p['title'],'collection':p.get('collection',''),'variantName':variant.get('color_name',''),'image':photo,'priceCents':None,'currency':p.get('currency','EUR')})
   return result
  if action=='cart_save':
+  if v.get('expected_user_id',user['id'])!=user['id']:raise PermissionError('Le compte a changé. Recharge ton panier.')
   items=v.get('items',[])
   if not isinstance(items,list) or len(items)>40:raise ValueError('Panier trop grand.')
   clean=[];variants={x['id']:x for x in d.rows(db,'product_variants')};products={x['id']:x for x in d.rows(db,'products')}
