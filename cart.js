@@ -59,6 +59,7 @@
     if (prior) prior.quantity = Math.min(10, prior.quantity + 1);
     else items.push({key, productId, variantId, title:button.dataset.title || 'DAY ONE', collection:button.dataset.collection || 'ACTE I: DAY ONE', variantName:button.dataset.variantName || (variantId === 'noir' ? 'Noir' : 'Blanc'), size, image:button.dataset.image || '', priceCents:button.dataset.priceCents ? Number(button.dataset.priceCents) : null, currency:button.dataset.currency || 'EUR', quantity:1});
     save(); open();
+    document.dispatchEvent(new CustomEvent('unlived:cart-added',{detail:{product:button.dataset.slug||productId}}));
     document.querySelector('.toast')?.classList.add('show');
     const toast = document.querySelector('.toast'); if (toast) { toast.textContent = 'La pièce a rejoint ton panier.'; clearTimeout(toast._cartTimer); toast._cartTimer = setTimeout(() => toast.classList.remove('show'), 2600); }
   });

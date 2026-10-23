@@ -40,6 +40,20 @@ Définir comme variable d’environnement persistante du service :
 PUBLIC_ORIGIN=https://unlived.club
 ```
 
+Pour le suivi derrière un reverse proxy local, définir aussi `TRUSTED_PROXIES=127.0.0.1/32,::1/128`
+et transmettre `X-Forwarded-For` depuis ce proxy. Seuls les proxys explicitement autorisés peuvent
+déclarer l’adresse du visiteur. Sans cette configuration, une requête provenant de localhost est
+exclue des statistiques. Une connexion administrateur exclut son navigateur et son IP pendant un an,
+y compris après déconnexion. Les IP exclues sont conservées sous forme de HMAC, jamais dans les événements.
+
+L’attribution affiliée consentie dure 30 jours : cookie HttpOnly, association au compte à la connexion,
+puis conservation sur le panier et sur la commande créée. Le code et le taux sont figés sur cette commande.
+Un code invalide, suspendu ou appartenant à l’acheteur ne génère aucune attribution. Le futur prestataire
+de paiement devra confirmer le paiement côté serveur et calculer la commission à partir de la commande ;
+les visites et paniers ne sont jamais considérés comme des ventes payées.
+
+Tests des parcours sur base temporaire : `python3 scripts/test-workflows.py`.
+
 Le domaine doit pointer vers le service et le trafic public doit passer en HTTPS. Si l’hébergeur attribue un autre domaine, remplacer la valeur par l’adresse HTTPS réellement utilisée.
 
 ## Disque et données
@@ -67,3 +81,7 @@ python3 manage.py backup
 Stocker ces sauvegardes dans un emplacement privé distinct du site. L’envoi de courriels, le paiement des commandes et le versement automatique des commissions ne sont pas activés : ils attendent la configuration de leurs prestataires.
 
 La configuration de l’indexation, du sitemap, des breadcrumbs et de Google Search Console est détaillée dans `docs/GUIDE-SEO-GEO-MISE-EN-LIGNE.md`.
+
+## E-mails de sécurité
+
+Voir `docs/SECURITE-AUTHENTIFICATION.md`. Définir les secrets Resend sur le serveur, `EMAIL_PUBLIC_ORIGIN=https://unlived.club`, et une adresse expéditrice autorisée. Pour PHP, configurer une tâche cron chaque minute : `php /chemin/prive/du/projet/scripts/send-auth-emails.php`. Les nouvelles inscriptions publiques exigent une confirmation.

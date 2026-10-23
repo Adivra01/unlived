@@ -28,7 +28,8 @@ Les mots de passe générés ne sont affichés qu’à la création. Ils sont st
 Sessions aléatoires, cookie HttpOnly/SameSite, expiration à 7 jours. Les rôles sont vérifiés côté serveur.
 L’inscription publique crée uniquement des clients. Les clients ne lisent que leurs favoris et commandes.
 La modification de l’e-mail ou du mot de passe exige le mot de passe actuel.
-L’envoi d’e-mails et la récupération par e-mail sont en attente de configuration.
+Les confirmations d’adresse et la récupération par e-mail utilisent Resend et une file d’envoi chiffrée.
+Configuration et tests : [sécurité de l’authentification](docs/SECURITE-AUTHENTIFICATION.md).
 
 ## Liste d’attente et avis
 

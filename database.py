@@ -1,6 +1,6 @@
 """SQLite storage and server-side access rules for UNLIVED."""
 import sqlite3,json,uuid,secrets,hashlib,hmac,time,re
-import protection
+import protection,password_policy
 from pathlib import Path
 from datetime import datetime,timezone
 ROOT=Path(__file__).resolve().parent
@@ -15,7 +15,7 @@ def password_hash(password,salt=None):
 def password_ok(password,hashed):
     try:return hmac.compare_digest(password_hash(password,hashed.split(':')[0]),hashed)
     except (ValueError,TypeError):return False
-def public_user(row):return {'id':row['id'],'email':protection.decrypt(row['email']),'user_metadata':{'display_name':protection.decrypt(row['display_name'])}}
+def public_user(row):return {'id':row['id'],'email':protection.decrypt(row['email']),'role':row['role'],'user_metadata':{'display_name':protection.decrypt(row['display_name'])}}
 def init():
     DB.parent.mkdir(mode=0o700,exist_ok=True)
     with connect() as db:
@@ -23,6 +23,10 @@ def init():
         db.execute('CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,display_name TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN (\'admin\',\'client\')),created_at TEXT NOT NULL)')
         db.execute('CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,expires REAL NOT NULL)')
         db.execute('CREATE TABLE IF NOT EXISTS migrations(name TEXT PRIMARY KEY)')
+        if 'email_verified' not in [r[1] for r in db.execute('PRAGMA table_info(users)')]:db.execute('ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1')
+        db.execute('CREATE TABLE IF NOT EXISTS auth_tokens(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,purpose TEXT NOT NULL,expires REAL NOT NULL,target TEXT NOT NULL,original_lookup TEXT NOT NULL,created REAL NOT NULL,used_at REAL)')
+        db.execute('CREATE TABLE IF NOT EXISTS auth_outbox(id TEXT PRIMARY KEY,payload TEXT NOT NULL,next_attempt REAL NOT NULL,attempts INTEGER NOT NULL,status TEXT NOT NULL)')
+        db.execute('CREATE TABLE IF NOT EXISTS auth_limits(id TEXT PRIMARY KEY,attempts TEXT NOT NULL,updated REAL NOT NULL)')
         for table in TABLES:db.execute(f'CREATE TABLE IF NOT EXISTS {table}(id TEXT PRIMARY KEY,data TEXT NOT NULL CHECK(json_valid(data)))')
         for table,name,cols in [('products','product_slug',"json_extract(data,'$.slug')"),('customer_favorites','favorite_owner',"json_extract(data,'$.user_id'),json_extract(data,'$.product_id')"),('launch_waitlist','waitlist_email_concept',"lower(json_extract(data,'$.email')),json_extract(data,'$.concept_slug')"),('launch_waitlist','waitlist_token',"json_extract(data,'$.feedback_token')"),('launch_waitlist_feedback','feedback_token',"json_extract(data,'$.feedback_token')")]:
             db.execute(f'CREATE UNIQUE INDEX IF NOT EXISTS {name} ON {table}({cols})')
@@ -45,14 +49,14 @@ def save(db,table,row):
 def rows(db,table):return [protection.decode(json.loads(r['data'])) for r in db.execute(f'SELECT data FROM {table}')]
 def user_for(db,token):
     if not token:return None
-    return db.execute('SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires>?',(hashlib.sha256(token.encode()).hexdigest(),time.time())).fetchone()
+    return db.execute('SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires>? AND u.email_verified=1',(hashlib.sha256(token.encode()).hexdigest(),time.time())).fetchone()
 def new_session(db,user_id):
     token=secrets.token_urlsafe(32)
     db.execute('DELETE FROM sessions WHERE expires<?',(time.time(),))
     db.execute('INSERT INTO sessions VALUES (?,?,?)',(hashlib.sha256(token.encode()).hexdigest(),user_id,time.time()+604800));return token
 def create_user(db,email,password,name,role='client'):
     if not isinstance(email,str) or not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+',email) or len(email)>254:raise ValueError('Adresse e-mail invalide.')
-    if not isinstance(password,str) or not 10<=len(password)<=256:raise ValueError('Le mot de passe doit contenir entre 10 et 256 caractères.')
+    password_policy.validate(password)
     uid=str(uuid.uuid4());db.execute('INSERT INTO users(id,email,password_hash,display_name,role,created_at,email_lookup) VALUES (?,?,?,?,?,?,?)',(uid,protection.encrypt(email.strip().lower()),password_hash(password),protection.encrypt(str(name)[:100]),role,now(),protection.lookup(email)));return db.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone()
 
 def query(db,body,user):
@@ -93,13 +97,20 @@ def query(db,body,user):
         for values in incoming:
             if not isinstance(values,dict):raise ValueError('Données invalides.')
             if table=='orders':
-                if any(k in values for k in ('payment_verified','payment_status','paid_at','commission_cents','total_cents','affiliate_code')):raise PermissionError('La confirmation des paiements nécessite le prestataire de paiement.')
+                if any(k in values for k in ('payment_verified','payment_status','paid_at','commission_cents','commission_percent','total_cents','affiliate_code')):raise PermissionError('La confirmation des paiements nécessite le prestataire de paiement.')
                 if values.get('status') in ('processing','shipped','delivered') and any(r.get('payment_verified') is not True for r in selected):raise ValueError('Le paiement doit être confirmé avant la production.')
             if action=='update':
                 if not filters:raise ValueError('Identifiant requis.')
                 candidates=[{**row,**{k:v for k,v in values.items() if k not in ('id','created_at')}} for row in selected]
             else:candidates=[{**values,'id':str(uuid.uuid4()),'created_at':now()}]
             for row in candidates:
+                if table=='orders' and action in ('insert','upsert'):
+                    import business
+                    customer=db.execute('SELECT * FROM users WHERE id=?',(row.get('customer_id'),)).fetchone()
+                    ref,_=business.attribution(db,customer) if customer else (None,None)
+                    affiliate=next((a for a in rows(db,'affiliates') if ref and a['code']==ref['code']),None)
+                    row['affiliate_code']=affiliate['code'] if affiliate else None
+                    row['commission_percent']=affiliate['percent'] if affiliate else 0
                 if table=='customer_favorites':
                     if row.get('product_id') not in active:raise ValueError('Produit indisponible.')
                     row={k:row[k] for k in ('id','created_at','product_id')};row['user_id']=user['id']
@@ -136,6 +147,8 @@ def query(db,body,user):
                 if table=='product_variants':
                     if not any(r['id']==row.get('product_id') for r in rows(db,'products')):raise ValueError('Produit introuvable.')
                     if row.get('stock_quantity') is not None and (type(row['stock_quantity'])!=int or row['stock_quantity']<0):raise ValueError('Stock invalide.')
+                    if row.get('stock_status') not in ('in_stock','out_of_stock','unknown'):raise ValueError('Disponibilité invalide.')
+                    if row.get('stock_quantity')==0 and row.get('stock_status')=='in_stock':raise ValueError('Pour rendre cette variante disponible, augmente le stock ou laisse la quantité vide.')
                 if table=='product_media':
                     url=str(row.get('url',''))
                     if not (url.startswith('assets/') or url.startswith('https://')):raise ValueError('URL de média invalide.')

@@ -1,0 +1,71 @@
+/* Only the authenticated client workspace; the campaign login keeps its design. */
+.account-page.client-workspace{--paper:#f4f1eb;--ink:#191515;--muted:#706a66;--line:#e8e2dc;--wash:#faf8f5;background:#f4f1eb;color:#191515;color-scheme:light}
+.client-workspace>.site-header,.client-workspace>.announcement,.client-workspace>.footer,.client-workspace>.reading-progress,.client-workspace .page-breadcrumbs,.client-workspace .account-support{display:none}
+.account-page.client-workspace .account-shell{display:block;max-width:none;margin:0;padding:0;min-height:100vh}
+.account-page.client-workspace .account-sidebar{position:fixed;inset:0 auto 0 0;top:0;width:246px;height:100dvh;padding:25px 16px 18px;display:flex;flex-direction:column;gap:0;overflow-y:auto;background:#171313;color:#e8e4dc;border:0;border-radius:0;box-shadow:none;z-index:100;scrollbar-width:thin;scrollbar-color:#51433f #171313}
+.account-page.client-workspace .account-content{margin-left:246px;min-height:100vh;background:#f4f1eb;color:#191515;padding:34px 32px 48px}
+.client-workspace #customer-dashboard{max-width:1480px;margin:0 auto}
+.client-workspace .account-sidebar-brand{position:relative;border:0;padding:0 12px}
+.client-workspace .account-sidebar-brand img{width:145px;height:auto;filter:brightness(0) invert(1)}
+.client-workspace .account-sidebar-brand p{font-size:9px;letter-spacing:.15em;color:#b8a99f;margin:32px 0 10px}
+.client-workspace .account-side-nav{display:grid;gap:4px;padding:6px 0 24px}
+.client-workspace .account-side-nav a{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:11px 13px;font-size:12px;font-weight:500;color:#c2b6ad;border-radius:8px}
+.client-workspace .account-side-nav a:hover{background:#ffffff0d;color:#fff;border-radius:8px}
+.client-workspace .account-side-nav a.is-active{background:#7a2e38;color:#fff;border-radius:8px;box-shadow:inset 3px 0 #d7b78b}
+.client-workspace .account-side-nav a span{background:#ffffff14;color:inherit;border-radius:5px;padding:2px 6px}
+.client-sidebar-bottom{margin-top:auto;border-top:1px solid #ffffff18;padding-top:18px}
+.client-workspace .account-sidebar-shop{border:0;color:#c2b6ad;font-size:12px;padding:12px}
+.client-workspace .account-sidebar-shop:hover{color:#fff}
+.client-identity{display:flex;align-items:center;gap:10px;border-top:1px solid #ffffff18;padding:20px 10px 12px;margin-top:14px}
+.client-avatar{display:grid;place-items:center;flex:0 0 34px;height:34px;background:#7a2e38;color:#fff;border-radius:50%;font-size:14px}
+.client-identity>div{display:grid;gap:5px;min-width:0}
+.client-identity strong{font-size:12px;font-weight:500;overflow-wrap:anywhere}
+.client-identity small{color:#b8a99f;font-size:10px}
+.client-sign-out{background:transparent;color:#c2b6ad;border:0;padding:12px 10px;font:inherit;font-size:11px;text-align:left;cursor:pointer}
+.client-workspace .account-welcome{border-bottom:1px solid #e8e2dc;padding:0 0 24px;margin-bottom:26px}
+.client-workspace .account-welcome h2{font:650 clamp(24px,2.6vw,34px)/1.35 var(--display);letter-spacing:-.045em;margin:8px 0}
+.client-workspace .account-kicker{font-size:9px;letter-spacing:.15em;color:#82766d;margin-bottom:10px}
+.client-workspace .account-muted{font-size:13px;line-height:1.8;color:#82766d;margin:0}
+.account-page.client-workspace .account-section{padding:0;border:0;scroll-margin-top:24px}
+.client-workspace .account-section-heading{margin-bottom:22px;align-items:center}
+.client-workspace .account-section-heading h3,.client-workspace .business-panel>h3{font:600 23px/1.35 var(--display);letter-spacing:-.035em;margin:0}
+.client-workspace .account-section-heading .account-kicker{display:none}
+.client-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
+.client-metric{display:flex;flex-direction:column;gap:18px;min-width:0;border:1px solid #e8e2dc;border-radius:15px;padding:24px;background:#fff}
+.client-metric>span{font-size:12px;line-height:1.5;color:#665d57}
+.client-metric strong{font:600 clamp(26px,2.8vw,38px)/1.2 var(--display);letter-spacing:-.05em;overflow-wrap:anywhere}
+.client-metric small{font-size:10px;color:#82766d;line-height:1.7;margin-top:auto}
+.client-metric-featured{background:#7a2e38;border-color:#7a2e38;color:#fff}
+.client-metric-featured>span,.client-metric-featured small{color:#f0dfd8}
+.client-overview-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+.client-panel{background:#fff;border:1px solid #e8e2dc;padding:24px;border-radius:16px;min-width:0}
+.client-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}
+.client-panel h4{font:600 17px/1.4 var(--display);letter-spacing:-.025em;margin:0}
+.client-panel-heading>a{font-size:11px;color:#7a2e38;white-space:nowrap}
+.client-recent-order{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid #eee9e3;font-size:12px}
+.client-recent-order:last-child{border:0}
+.client-recent-order>div{display:grid;gap:7px}
+.client-recent-order small{color:#82766d;font-size:11px}
+.client-workspace .order-status-pill,.client-affiliate-status{display:inline-block;border-radius:6px;padding:6px 9px;background:#f4f1eb;color:#7a2e38;font-size:11px}
+.client-workspace .account-empty-state{background:#fff;border:1px solid #e8e2dc;border-radius:16px;min-height:240px}
+.client-workspace .order-card,.client-workspace .profile-card,.account-page.client-workspace .business-panel{background:#fff;border:1px solid #e8e2dc;border-radius:16px;padding:25px;color:#191515;margin:0}
+.client-workspace .account-form{max-width:640px}
+.client-workspace .account-form input,.client-workspace .business-panel input:not([type=checkbox]),.client-workspace .business-panel textarea,.client-workspace .business-panel select{border:1px solid #ded7ce;background:#faf8f5;color:#191515;border-radius:8px;min-height:48px;padding:12px 14px}
+.client-workspace .button,.client-workspace .business-panel button{font-size:12px;letter-spacing:0;text-transform:none;background:#7a2e38;color:#fff;border:1px solid #7a2e38;border-radius:9px;min-height:44px;padding:12px 18px}
+.client-workspace .button:hover,.client-workspace .business-panel button:hover{background:#191515;border-color:#191515;border-radius:9px}
+.client-workspace .account-favorites{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.client-workspace .favorite-card{background:#fff;border:1px solid #e8e2dc;border-radius:14px;overflow:hidden}
+.client-workspace .favorite-card-image{aspect-ratio:4/4.5}
+.client-workspace .favorite-card-info h4{font-size:16px}
+.client-workspace .favorite-remove{color:#82766d}
+.client-workspace .business-metrics>p{background:#faf8f5;border-color:#e8e2dc}
+.client-workspace .business-panel label{font-size:13px}
+.client-workspace .business-panel p{font-size:13px;line-height:1.8}
+.client-workspace .business-panel label:has(input[type=checkbox]){display:block;line-height:1.8}
+.client-workspace .business-panel input[type=checkbox]{margin-right:8px;accent-color:#7a2e38}
+.client-menu,#client-menu-close,.client-backdrop{display:none}
+.client-backdrop[hidden]{display:none!important}
+@media(max-width:1200px){.client-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.client-overview-grid{grid-template-columns:1fr}.client-workspace .account-favorites{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.account-page.client-workspace .account-content{margin-left:0;padding:22px 20px 40px}.account-page.client-workspace .account-sidebar{transform:translateX(-100%);transition:transform .2s}.account-page.client-workspace .account-sidebar.is-open{transform:none}.client-workspace .client-menu{display:block;border:1px solid #e8e2dc;border-radius:8px;background:#fff;color:#191515;font-size:12px;padding:10px 14px;margin-bottom:22px}.client-workspace #client-menu-close{display:block;position:absolute;right:0;top:-4px;background:none;border:0;color:#e8e4dc;font-size:26px;width:40px;height:40px}.client-workspace .client-backdrop:not([hidden]){display:block;position:fixed;inset:0;z-index:99;border:0;background:#0007}.client-workspace .account-welcome h2{font-size:28px}.client-metric{padding:20px}}
+@media(max-width:480px){.account-page.client-workspace .account-content{padding:20px 15px 32px}.client-metrics{gap:10px}.client-metric{padding:16px;gap:12px}.client-metric>span{font-size:11px}.client-metric strong{font-size:27px}.client-metric small{font-size:9px}.client-panel{padding:20px}.client-workspace .account-favorites{grid-template-columns:1fr}.client-panel-heading{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.account-page.client-workspace .account-sidebar{transition:none}}

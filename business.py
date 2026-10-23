@@ -4,7 +4,7 @@ from datetime import datetime,timedelta,timezone
 from collections import Counter
 import database as d
 import protection
-TABLES=('affiliates','withdrawals','campaigns','discounts','settings','carts','closure_requests','audit_events','analytics_events')
+TABLES=('affiliates','withdrawals','campaigns','discounts','settings','carts','closure_requests','audit_events','analytics_events','analytics_exclusions','affiliate_attributions')
 def init():
  with d.connect() as db:
   for t in TABLES:db.execute(f'CREATE TABLE IF NOT EXISTS {t}(id TEXT PRIMARY KEY,data TEXT NOT NULL CHECK(json_valid(data)))')
@@ -15,8 +15,57 @@ def audit(db,user,action,entity):add(db,'audit_events',{'user_id':user['id'],'ac
 def config(db):return d.rows(db,'settings')[0]
 def require(user,admin=False):
  if not user or (admin and user['role']!='admin'):raise PermissionError('Accès non autorisé.')
+def exclude_ip(db,ip):
+ import hmac,time
+ digest=hmac.new(protection.key(),('analytics-exclusion:'+ip).encode(),'sha256').hexdigest()
+ d.save(db,'analytics_exclusions',{'id':digest,'expires':time.time()+365*86400})
+def ip_excluded(db,ip):
+ import hmac,time
+ digest=hmac.new(protection.key(),('analytics-exclusion:'+ip).encode(),'sha256').hexdigest()
+ row=db.execute('SELECT data FROM analytics_exclusions WHERE id=?',(digest,)).fetchone()
+ return bool(row and json.loads(row['data']).get('expires',0)>time.time())
+def attribution(db,user=None,token='',code=None):
+ import hashlib,time
+ now=time.time();entries=d.rows(db,'affiliate_attributions')
+ current=next((a for a in entries if a['id']==hashlib.sha256(token.encode()).hexdigest() and a['expires']>now),None) if token else None
+ if not current and user:current=next((a for a in sorted(entries,key=lambda a:a['expires'],reverse=True) if a.get('user_id')==user['id'] and a['expires']>now),None)
+ active={a['code']:a for a in d.rows(db,'affiliates') if a['status']=='active' and (not user or a['user_id']!=user['id'])}
+ if user and user['role']=='admin':return None,None
+ if code in active and (not current or current['code']!=code):
+  token=secrets.token_urlsafe(32);current={'id':hashlib.sha256(token.encode()).hexdigest(),'code':code,'expires':now+30*86400}
+  if user:current['user_id']=user['id']
+  d.save(db,'affiliate_attributions',current);return current,token
+ if current and current['code'] in active:
+  if user and current.get('user_id')!=user['id']:current['user_id']=user['id'];d.save(db,'affiliate_attributions',current)
+  return current,None
+ return None,None
+def save_product(db,v,user):
+ product=dict(v.get('product') or {});variant=dict(v.get('variant') or {})
+ product={k:val for k,val in product.items() if k in ('title','slug','collection','category','description','status','price_cents','planned_price_cents','currency')}
+ variant={k:val for k,val in variant.items() if k in ('color_name','color_slug','color_hex','sku','stock_quantity','stock_status','is_available')}
+ pid=v.get('product_id');vid=v.get('variant_id');urls=v.get('media',[])
+ if not isinstance(urls,list) or len(urls)>40 or any(not isinstance(url,str) or not (url.startswith('assets/') or url.startswith('https://')) for url in urls):raise ValueError('Médias invalides : utilise assets/ ou HTTPS.')
+ if pid and not any(p['id']==pid for p in d.rows(db,'products')):raise ValueError('Produit introuvable.')
+ if vid and not any(row['id']==vid and row['product_id']==pid for row in d.rows(db,'product_variants')):raise ValueError('Variante introuvable pour cette pièce.')
+ def write(table,values,id=None):return d.query(db,{'table':table,'action':'update' if id else 'insert','values':values,'filters':[{'op':'eq','key':'id','value':id}] if id else []},user)[0]
+ saved=write('products',product,pid);pid=saved['id'];variant['product_id']=pid
+ saved_variant=write('product_variants',variant,vid);vid=saved_variant['id']
+ previous=sorted([m for m in d.rows(db,'product_media') if m.get('product_id')==pid and m.get('variant_id')==vid],key=lambda m:m.get('sort_order',0))
+ for index,url in enumerate(dict.fromkeys(urls)):
+  values={'product_id':pid,'variant_id':vid,'url':url,'media_type':'video' if re.search(r'\.mp4(?:\?|$)',url,re.I) else 'image','alt_text':f"{product['title']} — {variant.get('color_name','')}",'sort_order':index}
+  prior=previous[index] if index<len(previous) else None
+  if not prior or any(prior.get(k)!=val for k,val in values.items()):write('product_media',values,prior['id'] if prior else None)
+ obsolete=previous[len(dict.fromkeys(urls)):]
+ for row in obsolete:db.execute('DELETE FROM product_media WHERE id=?',(row['id'],))
+ audit(db,user,'product_save',pid)
+ return d.query(db,{'table':'products','action':'select','filters':[{'op':'eq','key':'id','value':pid}]},user)[0]
 def owned(db,table,user):return [r for r in d.rows(db,table) if r.get('user_id')==user['id']]
 def text(v,n=250):return str(v or '').strip()[:n]
+def new_affiliate_code(db):
+ existing={a['code'] for a in d.rows(db,'affiliates') if a.get('code')}
+ while True:
+  code=secrets.token_hex(5)
+  if code not in existing:return code
 def money(v):
  if isinstance(v,bool) or not isinstance(v,int) or v<0:raise ValueError('Montant invalide.')
  return v
@@ -28,7 +77,34 @@ def stats(db,days=30,affiliate=None,campaign=None):
  for i in range(days):
   day=(datetime.now(timezone.utc)-timedelta(days=days-1-i)).date().isoformat();items=[e for e in visits if e['created_at'][:10]==day];daily.append({'day':day,'views':len(items),'visitors':len({e['visitor'] for e in items})})
  def counts(key,items):return [{'name':k,'count':v} for k,v in Counter(e.get(key) or 'Inconnu' for e in items).most_common(30)]
- return {'views':len(visits),'visitors':len(visitors),'sessions':len({e['session'] for e in visits}),'daily':daily,'pages':counts('path',visits),'countries':counts('country',visits),'products':counts('product',[e for e in events if e.get('event')=='product_view']),'events':counts('event',events)}
+ return {'views':len(visits),'visitors':len(visitors),'sessions':len({e['session'] for e in visits}),'daily':daily,'pages':counts('path',visits),'countries':counts('country',visits),'products':counts('product',[e for e in events if e.get('event')=='product_view']),'events':counts('event',events),'sources':counts('source',visits),'devices':counts('device',visits)}
+def overview(db,days=30):
+ start=(datetime.now(timezone.utc)-timedelta(days=days-1)).date().isoformat()
+ traffic=stats(db,days)
+ visits=[e for e in d.rows(db,'analytics_events') if e.get('event')=='page_view']
+ paid=[o for o in d.rows(db,'orders') if o.get('payment_verified') is True and o.get('payment_status')=='paid' and o.get('status') not in ('cancelled','refunded') and o.get('currency','EUR')=='EUR']
+ period=[o for o in paid if (o.get('paid_at') or o.get('created_at',''))[:10]>=start]
+ ids={o['id'] for o in period};sold=Counter()
+ products={p['id']:p for p in d.rows(db,'products')}
+ product_names={key:p.get('title',key) for p in products.values() for key in (p['id'],p.get('slug',p['id']))}
+ for row in traffic['products']:row['name']=product_names.get(row['name'],row['name'])
+ for item in d.rows(db,'order_items'):
+  if item.get('order_id') in ids:sold[item.get('product_id')]+=max(0,int(item.get('quantity',0)))
+ interest=Counter()
+ waitlist=d.rows(db,'launch_waitlist')
+ feedback={row.get('feedback_token'):row for row in d.rows(db,'launch_waitlist_feedback') if row.get('feedback_token')}
+ for item in waitlist:
+  if item.get('created_at','')[:10]>=start:interest[item.get('concept_slug') or item.get('product_id') or 'Inconnu']+=1
+ favorites=Counter(item.get('product_id') for item in d.rows(db,'customer_favorites') if item.get('created_at','')[:10]>=start)
+ def ranked(counter):return [{'name':product_names.get(k) or k or 'Inconnu','count':v} for k,v in counter.most_common(10)]
+ daily_revenue=[{'day':day['day'],'revenue_cents':sum(o.get('total_cents') or 0 for o in period if (o.get('paid_at') or o.get('created_at',''))[:10]==day['day'])} for day in traffic['daily']]
+ registrations=[u for u in db.execute("SELECT created_at FROM users WHERE role='client'") if u['created_at'][:10]>=start]
+ recent=[]
+ for row in sorted(waitlist,key=lambda r:r.get('created_at',''),reverse=True)[:5]:
+  reply=feedback.get(row.get('feedback_token'))
+  recent.append({**{k:row.get(k) for k in ('id','first_name','last_name','email','concept_slug','selected_size','created_at')},'feedback':{k:reply.get(k) for k in ('interest_level','what_appealed','what_to_improve','created_at')} if reply else None})
+ waitlist_stats={'total':len(waitlist),'period':sum(interest.values()),'answered':sum(1 for row in waitlist if row.get('feedback_token') in feedback),'recent':recent,'source':'local'}
+ return {'days':days,'traffic':traffic,'total_visitors':len({e['visitor'] for e in visits}),'total_views':len(visits),'revenue_cents':sum(o.get('total_cents') or 0 for o in paid),'period_revenue_cents':sum(o.get('total_cents') or 0 for o in period),'paid_orders':len(period),'average_order_cents':round(sum(o.get('total_cents') or 0 for o in period)/len(period)) if period else 0,'daily_revenue':daily_revenue,'registrations':len(registrations),'interest_count':sum(interest.values()),'favorites_count':sum(favorites.values()),'best_sellers':ranked(sold),'interest':ranked(interest),'favorites':ranked(favorites),'waitlist':waitlist_stats,'retention_days':395}
 def balance(db,affiliate):
  # Only server-confirmed paid orders enter the commission balance; no client can confirm payment.
  orders=[o for o in d.rows(db,'orders') if o.get('affiliate_code')==affiliate['code'] and o.get('payment_verified') is True and o.get('payment_status')=='paid' and o.get('customer_id')!=affiliate['user_id'] and o.get('currency','EUR')=='EUR' and o.get('status') not in ('cancelled','refunded')]
@@ -70,12 +146,13 @@ def handle(db,body,user):
    qty=x.get('quantity',1)
    if type(qty)!=int or not 1<=qty<=20 or x.get('size') not in ('XS','S','M','L','XL','XXL'):raise ValueError('Taille ou quantité invalide.')
    clean.append({k:x.get(k) for k in ('key','productId','variantId','size','quantity')})
-  row={'id':user['id'],'user_id':user['id'],'items':clean,'updated_at':d.now()};d.save(db,'carts',row);return clean
+  ref,_=attribution(db,user)
+  row={'id':user['id'],'user_id':user['id'],'items':clean,'affiliate_code':ref['code'] if ref else None,'updated_at':d.now()};d.save(db,'carts',row);return clean
  if action=='affiliate_apply':
   if user['role']!='client':raise PermissionError('Seuls les clients peuvent demander à rejoindre le programme.')
   if owned(db,'affiliates',user):raise ValueError('Demande déjà enregistrée.')
   if v.get('accept') is not True:raise ValueError('Accepte les conditions du programme.')
-  return add(db,'affiliates',{'user_id':user['id'],'code':secrets.token_hex(5),'status':'pending','percent':config(db)['commission_percent'],'terms_accepted_at':d.now(),'terms_version':'2026-10-19'})
+  return add(db,'affiliates',{'user_id':user['id'],'code':new_affiliate_code(db),'status':'pending','percent':config(db)['commission_percent'],'terms_accepted_at':d.now(),'terms_version':'2026-10-19'})
  if action=='withdraw':
   if user['role']!='client':raise PermissionError('Seuls les clients peuvent demander un retrait.')
   aff=next(iter(owned(db,'affiliates',user)),None)
@@ -89,6 +166,16 @@ def handle(db,body,user):
   if owned(db,'closure_requests',user):raise ValueError('Une demande existe déjà.')
   return add(db,'closure_requests',{'user_id':user['id'],'reason':text(v.get('reason'),1000),'status':'requested'})
  require(user,True)
+ if action=='mail_status':
+  import auth_service
+  settings=auth_service.config()
+  return {'configured':bool(settings['RESEND_API_KEY'] and settings['RESEND_FROM']),'pending':db.execute("SELECT count(*) FROM auth_outbox WHERE status='pending' AND attempts<5").fetchone()[0],'failed':db.execute('SELECT count(*) FROM auth_outbox WHERE attempts>=5').fetchone()[0]}
+ if action=='mail_retry':
+  import time
+  count=db.execute("UPDATE auth_outbox SET status='pending',attempts=0,next_attempt=? WHERE attempts>=5",(time.time(),)).rowcount
+  audit(db,user,'mail_retry',str(count));return {'retried':count}
+ if action=='product_save':return save_product(db,v,user)
+ if action=='overview':return overview(db,max(1,min(366,int(v.get('days',30)))))
  if action=='dashboard':
   days=int(v.get('days',30));days=max(1,min(366,days));affs=d.rows(db,'affiliates')
   users=[{**d.public_user(u),'role':u['role'],'created_at':u['created_at']} for u in db.execute('SELECT * FROM users')]
@@ -118,6 +205,7 @@ def handle(db,body,user):
   if not row:raise ValueError('Affilié introuvable.')
   status=v.get('status');percent=int(v.get('percent',20))
   if status not in ('active','rejected','suspended','pending') or not 0<=percent<=100:raise ValueError('Statut invalide.')
+  if status=='active' and not row.get('code'):row['code']=new_affiliate_code(db)
   row.update(status=status,percent=percent);d.save(db,'affiliates',row);audit(db,user,action,row['id']);return row
  if action=='request_update':
   table=v.get('table')
@@ -132,18 +220,22 @@ def handle(db,body,user):
   d.save(db,table,row);audit(db,user,action,row['id']);return row
  raise ValueError('Action inconnue.')
 def track(db,body,user,ip,ua):
- if ip in ('127.0.0.1','::1') or user and user['role']=='admin' or re.search('bot|crawler|spider',ua,re.I):return {'excluded':True}
+ if ip in ('127.0.0.1','::1') or user and user['role']=='admin' or ip_excluded(db,ip) or re.search('bot|crawler|spider',ua,re.I):return {'excluded':True}
  if body.get('consent') is not True:return {'excluded':True}
  event=body.get('event');path=text(body.get('path'),100)
- if event not in ('page_view','product_view','waitlist_success') or not re.fullmatch(r'/[a-z0-9-]*\.?[a-z]*',path):raise ValueError('Événement invalide.')
+ if event not in ('page_view','product_view','waitlist_success','add_to_cart') or not re.fullmatch(r'/[a-z0-9-]*\.?[a-z]*',path):raise ValueError('Événement invalide.')
  visitor=text(body.get('visitor'),40);session=text(body.get('session'),40);uuid.UUID(visitor);uuid.UUID(session)
  # No raw IP or user account is stored; visitor pseudonyms rotate monthly.
  month=d.now()[:7];visitor=protection.lookup(month+visitor);session=protection.lookup(session)
- recent=[r for r in d.rows(db,'analytics_events') if r.get('session')==session and r.get('path')==path and r.get('event')==event and r['created_at'][:16]==d.now()[:16]]
+ event_id=text(body.get('event_id'),40) or None
+ if event_id:uuid.UUID(event_id)
+ recent=[r for r in d.rows(db,'analytics_events') if (r.get('event_id')==event_id and r.get('session')==session if event_id else r.get('session')==session and r.get('path')==path and r.get('event')==event and r.get('product','')==text(body.get('product'),60) and r.get('affiliate','')==text(body.get('affiliate'),20) and r['created_at'][:16]==d.now()[:16])]
  if recent:return {'duplicate':True}
  aff=text(body.get('affiliate'),20)
- if not any(a['code']==aff and a['status']=='active' for a in d.rows(db,'affiliates')):aff=''
+ if not any(a['code']==aff and a['status']=='active' and (not user or a['user_id']!=user['id']) for a in d.rows(db,'affiliates')):aff=''
  country=text(body.get('country'),2).upper();country=country if re.fullmatch('[A-Z]{2}',country) else '??'
- add(db,'analytics_events',{'event':event,'path':path,'visitor':visitor,'session':session,'country':country,'product':text(body.get('product'),60),'affiliate':aff,'campaign':text(body.get('campaign'),60)})
+ source=text(body.get('source'),80)
+ device=body.get('device') if body.get('device') in ('mobile','tablet','desktop') else 'unknown'
+ add(db,'analytics_events',{'event':event,'event_id':event_id,'path':path,'visitor':visitor,'session':session,'country':country,'product':text(body.get('product'),60),'affiliate':aff,'campaign':text(body.get('campaign'),60),'source':source,'device':device})
  cutoff=(datetime.now(timezone.utc)-timedelta(days=395)).isoformat();db.execute("DELETE FROM analytics_events WHERE json_extract(data,'$.created_at')<?",(cutoff,))
  return {'recorded':True}

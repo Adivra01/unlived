@@ -20,4 +20,4 @@ Les mots de passe sont hachés avec scrypt. Les sessions utilisent un cookie Htt
 
 Installer `python3 -m pip install -r requirements.txt`. Héberger le serveur Python sur un volume persistant, derrière HTTPS, avec `PUBLIC_ORIGIN=https://unlived.club`. La base est `.data/unlived.sqlite3`. La clé est `.data/encryption.key`, ou la variable `UNLIVED_ENCRYPTION_KEY`. Ne jamais changer ou perdre cette clé. La sauvegarder séparément et de manière sécurisée ; le backup SQLite seul est insuffisant. Les anciennes copies de base réalisées avant chiffrement peuvent encore contenir du texte clair et doivent être protégées.
 
-`python3 manage.py backup` sauvegarde la base. Les comptes de test doivent être désactivés ou leurs mots de passe modifiés avant publication. L’envoi d’e-mails et la récupération de mot de passe restent à configurer avec l’adresse expéditrice.
+`python3 manage.py backup` sauvegarde la base. Les comptes de test doivent être désactivés ou leurs mots de passe modifiés avant publication. Les e-mails de confirmation et de récupération utilisent Resend. Voir SECURITE-AUTHENTIFICATION.md pour la configuration et les tests.

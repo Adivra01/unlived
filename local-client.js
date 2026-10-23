@@ -2,7 +2,7 @@
 (() => {
   const listeners=new Set();let session=null;
   async function request(path,body){
-    try{const response=await fetch('/api/'+path,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-UNLIVED-Request':'1'},body:JSON.stringify(body)});return await response.json()}
+    try{const response=await fetch('/api/'+path,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-UNLIVED-Request':'1'},body:JSON.stringify(body)});const result=await response.json();if(result.data?.user?.role==='admin'||result.data?.session?.user?.role==='admin'){try{localStorage.setItem('unlived-analytics-exclude','1')}catch{}}return result}
     catch{return {data:null,error:{message:'Le serveur local est indisponible.'}}}
   }
   const emit=(event)=>listeners.forEach(fn=>fn(event,session));
@@ -24,7 +24,7 @@
   }
   async function auth(action,values={}){
     const result=await request('auth',{action,...values});
-    if(!result.error){session=result.data?.session||null;emit(action==='logout'?'SIGNED_OUT':action==='update'?'USER_UPDATED':'SIGNED_IN')}
+    if(!result.error){session=result.data?.session||null;if(action==='logout')emit('SIGNED_OUT');else if(session)emit(action==='update'?'USER_UPDATED':'SIGNED_IN')}
     return result;
   }
   const client={from:table=>new Query(table),auth:{
@@ -34,7 +34,8 @@
     signUp:values=>auth('signup',{...values,display_name:values.options?.data?.display_name||''}),
     signOut:()=>auth('logout'),
     updateUser:values=>auth('update',values),
-    resetPasswordForEmail:()=>Promise.resolve({data:null,error:{message:'La récupération par e-mail sera activée après configuration de l’expéditeur.'}}),
+    resetPasswordForEmail:email=>request('auth',{action:'reset_request',email}),
+    resendVerification:email=>request('auth',{action:'resend_verification',email}),
     onAuthStateChange(callback){listeners.add(callback);return {data:{subscription:{unsubscribe:()=>listeners.delete(callback)}}}}
   }};
   window.UNLIVEDLocal=client;

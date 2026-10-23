@@ -10,7 +10,7 @@ a=p.parse_args();database.init()
 if a.command=='create-user':
     with database.connect() as db:
         if database.find_user(db,a.email):raise SystemExit('Ce compte existe déjà. Aucun mot de passe modifié.')
-        password=secrets.token_urlsafe(18);user=database.create_user(db,a.email,password,a.name,a.role)
+        password=secrets.token_urlsafe(18)+'A1!';user=database.create_user(db,a.email,password,a.name,a.role)
     print('Compte créé : '+a.email+' ('+a.role+')\nMot de passe : '+password)
 elif a.command=='backup':
     destination=database.ROOT/'.data'/('backup-'+datetime.now().strftime('%Y%m%d-%H%M%S')+'.sqlite3')
