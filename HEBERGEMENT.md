@@ -2,7 +2,15 @@
 
 Cette archive contient l’application web Python complète. Elle ne peut pas être hébergée comme un simple site statique : l’API et SQLite gèrent les comptes, favoris, produits, inscriptions à la waitlist et réponses au questionnaire.
 
-## Offre Hostinger requise
+## Déploiement Git sur l’hébergement Web Hostinger
+
+La liste d’attente et son questionnaire utilisent `waitlist-api.php` lorsque le site est publié sur un domaine. Les inscriptions sont enregistrées dans `.data/waitlist.sqlite3` avec les champs personnels chiffrés. Dans hPanel → PHP Configuration, utiliser PHP 8+ et activer `pdo_sqlite` et `openssl`. Le répertoire du site doit être accessible en écriture par PHP pour créer `.data` ; le fichier `.htaccess` interdit l’accès Web à ce dossier. Sauvegarder ensemble `waitlist.sqlite3` et `waitlist.key` : sans cette clé, les données chiffrées sont illisibles.
+
+Après le déploiement Git, ouvrir le formulaire de liste d’attente et effectuer une inscription réelle de contrôle. Si une erreur mentionne `pdo_sqlite`, activer l’extension dans hPanel. Le questionnaire suit immédiatement l’inscription.
+
+Les comptes, favoris, commandes, tableaux de bord et autres routes `/api/*` utilisent encore le serveur Python. Ils nécessitent la configuration VPS ci-dessous ou une conversion supplémentaire vers PHP. Ne pas annoncer ces fonctions comme opérationnelles sur l’hébergement Web classique.
+
+## Offre Hostinger requise pour l’application complète
 
 Ce projet est une application Python avec une base SQLite persistante. Il faut un **VPS Hostinger** avec accès SSH/root. L’intégration Git des offres d’hébergement Web classiques déploie des sites PHP ou statiques et ne lance pas ce serveur Python. Un ZIP ou un push Git seul ne rend donc pas le backend exécutable sur une offre Web classique.
 
