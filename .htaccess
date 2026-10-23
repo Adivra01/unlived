@@ -3,6 +3,7 @@ RedirectMatch 403 ^/\.data(?:/|$)
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteRule ^\.data(?:/|$) - [F,L,NC]
+RewriteRule ^api/(auth|data)$ api.php [L,QSA]
 </IfModule>
 <FilesMatch "^(?:\.env.*|.*\.(?:sqlite3?|db|key|py|toml))$">
 Require all denied

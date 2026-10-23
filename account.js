@@ -68,6 +68,7 @@
     list.innerHTML = data?.length ? data.map(order => `<article class="order-card"><div class="order-card-top"><b>Commande #${String(order.order_number).padStart(4,'0')}</b><span class="order-status-pill">${statusLabel(order.status)}</span></div><div class="order-card-lines">${(order.order_items || []).map(item=>`<p><span>${escape(item.product_title)} · ${escape(item.variant_name)} × ${item.quantity}</span><small>${item.unit_price_cents == null ? 'Prix à confirmer' : new Intl.NumberFormat('fr-FR',{style:'currency',currency:order.currency || 'EUR'}).format(item.unit_price_cents/100)}</small></p>`).join('')}</div><div class="order-card-bottom"><time>${new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(order.created_at))}</time><strong>${order.total_cents == null ? 'Total à confirmer' : new Intl.NumberFormat('fr-FR',{style:'currency',currency:order.currency || 'EUR'}).format(order.total_cents/100)}</strong></div></article>`) : '<div class="account-empty-state order-empty"><span>01</span><p>Aucune commande pour le moment.</p><a class="text-link" href="boutique.html">La première commence ici <b></b></a></div>';
   }
   async function showDashboard(user) {
+    $('.account-sidebar').hidden = false;
     if(currentUser?.id!==user.id){$('#account-favorites').innerHTML='<p class="account-empty">Chargement de tes favoris…</p>';$('#account-orders').innerHTML='<p class="account-empty">Chargement de tes commandes…</p>';$('#favorites-count').textContent='0';}
     currentUser = user;
     $('#auth-panel').hidden = true;
@@ -88,6 +89,7 @@
   }
   async function showAuth() {
     currentUser = null;
+    $('.account-sidebar').hidden = true;
     $('#customer-dashboard').hidden = true;
     $('#auth-panel').hidden = false;
   }
@@ -111,7 +113,7 @@
       }
     } else response = await client.auth.signInWithPassword({email, password});
     submit.disabled = false;
-    if (response.error) { message('#auth-message', 'Connexion impossible. Vérifie les informations saisies et réessaie.', true); return; }
+    if (response.error) { message('#auth-message', response.error.message || 'Connexion impossible. Vérifie les informations saisies et réessaie.', true); return; }
     message('#auth-message', '');
     if (response.data.user) await syncSession('SIGNED_IN',response.data.user);
     const destination = new URLSearchParams(location.search).get('return');
