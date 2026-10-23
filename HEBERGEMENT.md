@@ -85,3 +85,15 @@ La configuration de l’indexation, du sitemap, des breadcrumbs et de Google Sea
 ## E-mails de sécurité
 
 Voir `docs/SECURITE-AUTHENTIFICATION.md`. Définir les secrets Resend sur le serveur, `EMAIL_PUBLIC_ORIGIN=https://unlived.club`, et une adresse expéditrice autorisée. Pour PHP, configurer une tâche cron chaque minute : `php /chemin/prive/du/projet/scripts/send-auth-emails.php`. Les nouvelles inscriptions publiques exigent une confirmation.
+
+## Créer le compte administrateur sans SSH (hébergement PHP)
+
+Déployer `api.php`, `waitlist-admin.php`, `waitlist-export.php` et `.htaccess` avec le déploiement Git habituel ou le gestionnaire de fichiers Hostinger. Garder les fichiers existants `auth-mail.php` et `waitlist-admin-hash.php`. Ne pas remplacer ni supprimer `.data`, ses bases ou ses clés.
+
+Ouvrir `https://unlived.club/waitlist-admin.php`, se connecter avec le code administrateur existant puis ouvrir **Créer mon compte administrateur sur le site**. Saisir une adresse réelle et un mot de passe conforme. Le compte est créé directement dans `.data/auth.sqlite3`, avec le chiffrement et le hachage attendus par la connexion PHP. Cette opération est réservée à la session administrateur de la liste d’attente et protégée contre les requêtes intersites. Elle ne remplace aucun compte existant. Les comptes locaux ne sont pas synchronisés.
+
+Se connecter ensuite sur `https://unlived.club/compte.html`. Le rôle administrateur est renvoyé par le serveur. Cette création de compte ne convertit pas les routes métier Python en PHP.
+
+La même page propose **Télécharger Excel · XLSX** : un classeur avec les onglets Inscriptions et Avis (uniquement les questionnaires reçus), filtres et première ligne figée. Les numéros de téléphone restent du texte et les réponses ne sont jamais exécutées comme formules. Le fichier peut être importé dans Google Sheets via Fichier → Importer. L’export CSV existant reste disponible avec les deux catégories réunies. Aucun lien public de synchronisation contenant les données personnelles n’est créé.
+
+Vérification locale : syntaxe PHP vérifiée avec php-parser (PHP 8.3). L’environnement local ne contient pas d’interpréteur PHP ; le parcours de création/connexion et l’ouverture du classeur généré doivent donc être contrôlés après déploiement sur Hostinger.

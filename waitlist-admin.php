@@ -10,8 +10,32 @@ session_start();
 $verifier = require __DIR__.'/waitlist-admin-hash.php';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!hash_equals($_SESSION['csrf'] ?? '', (string)($_POST['csrf'] ?? ''))) { http_response_code(403); exit('Session expirée. Recharge la page.'); }
+    if (empty($_SESSION['csrf']) || !hash_equals($_SESSION['csrf'], (string)($_POST['csrf'] ?? ''))) { http_response_code(403); exit('Session expirée. Recharge la page.'); }
     if (isset($_POST['logout'])) { $_SESSION=[]; session_destroy(); header('Location: waitlist-admin.php'); exit; }
+    if (isset($_POST['create_account']) && !empty($_SESSION['admin'])) {
+        try {
+            define('UNLIVED_AUTH_MAINTENANCE', true);
+            require __DIR__.'/api.php';
+            $email=strtolower(trim((string)($_POST['email']??'')));
+            $password=(string)($_POST['account_password']??'');
+            if (!filter_var($email,FILTER_VALIDATE_EMAIL) || strlen($email)>254) throw new InvalidArgumentException('Adresse e-mail invalide.');
+            $hash=hashAuthPassword($password);
+            $lookup=hash_hmac('sha256',$email,$key);
+            $db->exec('BEGIN IMMEDIATE');
+            $stmt=$db->prepare('SELECT id FROM users WHERE email_lookup=?');$stmt->execute([$lookup]);
+            if ($stmt->fetchColumn()) throw new InvalidArgumentException('Ce compte existe déjà. Utilise « Mot de passe oublié » pour le récupérer. Aucun compte modifié.');
+            $stmt=$db->prepare('INSERT INTO users(id,email,email_lookup,password_hash,display_name,role,created_at,email_verified) VALUES (?,?,?,?,?,?,?,1)');
+            $stmt->execute([bin2hex(random_bytes(16)),cryptField($email),$lookup,$hash,cryptField('Administrateur'),'admin',gmdate('c')]);
+            $db->exec('COMMIT');
+            $_SESSION['notice']='Compte administrateur créé sur ce serveur. Tu peux maintenant te connecter sur compte.html avec cette adresse et ce mot de passe.';
+        } catch (Throwable $e) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
+            // SQLite transactions opened with exec need an explicit rollback.
+            if (isset($db)) {try {$db->exec('ROLLBACK');} catch(Throwable $ignored) {}}
+            $_SESSION['notice']=$e instanceof InvalidArgumentException ? $e->getMessage() : 'Création impossible. Vérifie le stockage SQLite et les journaux Hostinger.';
+        }
+        header('Location: waitlist-admin.php');exit;
+    }
     $attempts = (int)($_SESSION['attempts'] ?? 0);
     $since = (int)($_SESSION['attempt_time'] ?? 0);
     if (time()-$since > 900) $attempts=0;
@@ -43,6 +67,10 @@ if (!empty($_SESSION['admin'])) {
             foreach (['first_name','last_name','email','phone','what_appealed','what_to_improve'] as $column) $r[$column]=$decrypt($r[$column]);
             $rows[]=$r;
         }
+        if (($_GET['export'] ?? '')==='xlsx') {
+            require __DIR__.'/waitlist-export.php';
+            exportWaitlistWorkbook($rows);
+        }
         if (($_GET['export'] ?? '')==='csv') {
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="unlived-liste-attente.csv"');
@@ -60,4 +88,6 @@ $total=count($rows); $answered=count(array_filter($rows,static fn($r)=>$r['inter
 </style></head><body>
 <?php if (empty($_SESSION['admin'])): ?><div class="login"><img src="assets/unlived-logo.svg" alt="UNLIVED" width="145" style="background:#000;padding:9px"><h1>Liste d’attente</h1><p>Accès administrateur aux inscriptions et aux réponses.</p><form method="post"><input type="hidden" name="csrf" value="<?=h($_SESSION['csrf'])?>"><label>Code administrateur<input type="password" name="password" autocomplete="current-password" required autofocus></label><button>Se connecter</button></form><?php if ($error): ?><p class="error" role="alert"><?=h($error)?></p><?php endif; ?></div>
 <?php else: ?><div class="layout"><aside><a href="index.html"><img src="assets/unlived-logo.svg" alt="UNLIVED"></a><nav aria-label="Administration"><a class="active" href="waitlist-admin.php">Liste d’attente</a><a href="admin.html">Administration complète</a><a href="index.html">Voir le site</a></nav></aside><main><div class="top"><div><small>ADMINISTRATION / ACTE I</small><h1>Liste d’attente</h1><p>Inscriptions et réponses au questionnaire enregistrées sur ce serveur.</p></div><form method="post"><input type="hidden" name="csrf" value="<?=h($_SESSION['csrf'])?>"><button class="logout" name="logout" value="1">Déconnexion</button></form></div>
-<?php if ($dbError): ?><p class="error" role="alert"><?=h($dbError)?></p><?php else: ?><div class="stats"><div class="stat">Inscriptions<strong><?=$total?></strong></div><div class="stat">Questionnaires reçus<strong><?=$answered?></strong></div><div class="stat">En attente d’avis<strong><?=$total-$answered?></strong></div></div><div class="tools"><input id="search" type="search" placeholder="Rechercher nom, e-mail, pièce…" aria-label="Rechercher"><a class="button" href="?export=csv">Exporter vers Excel / Sheets · CSV</a></div><div class="table-wrap"><table id="entries"><thead><tr><th>Personne</th><th>Contact</th><th>Pièce</th><th>Inscription</th><th>Questionnaire</th></tr></thead><tbody><?php foreach ($rows as $r): ?><tr><td><b><?=h($r['first_name'].' '.$r['last_name'])?></b></td><td><a href="mailto:<?=h($r['email'])?>"><?=h($r['email'])?></a><small><?=h($r['phone'] ?: 'Sans téléphone')?></small></td><td><?=h($r['concept_slug'])?><small>Taille <?=h($r['selected_size'])?></small></td><td><?=h($r['created_at'])?><small><?=h($r['utm_source'])?></small></td><td><?php if ($r['interest_level']!==null): ?><details><summary>Intérêt <?=h((string)$r['interest_level'])?>/5 · Lire les réponses</summary><p><b>Ce qui a plu</b><br><?=h($r['what_appealed'])?></p><p><b>À améliorer</b><br><?=h($r['what_to_improve'])?></p></details><?php else: ?>Avis en attente<?php endif; ?></td></tr><?php endforeach; ?></tbody></table><?php if (!$rows): ?><p class="empty">Aucune inscription enregistrée dans la base déployée.</p><?php endif; ?></div><?php endif; ?></main></div><script>document.querySelector('#search')?.addEventListener('input',e=>{const q=e.target.value.toLocaleLowerCase();document.querySelectorAll('#entries tbody tr').forEach(r=>r.hidden=!r.textContent.toLocaleLowerCase().includes(q))})</script><?php endif; ?></body></html>
+<?php if (isset($_SESSION['notice'])): ?><p role="status"><?=h($_SESSION['notice'])?></p><?php unset($_SESSION['notice']); endif; ?>
+<details style="max-width:650px;margin:24px 0"><summary>Créer mon compte administrateur sur le site</summary><p>Le compte local n’est pas transféré sur Hostinger. Ce formulaire crée un compte dans la base SQLite de ce serveur, sans modifier les comptes existants. Utilise ton adresse réelle pour pouvoir récupérer ton mot de passe.</p><form method="post"><input type="hidden" name="csrf" value="<?=h($_SESSION['csrf'])?>"><label>Adresse e-mail <input type="email" name="email" autocomplete="email" required maxlength="254"></label><label>Mot de passe <input type="password" name="account_password" autocomplete="new-password" required minlength="8" maxlength="72"></label><p>8 caractères minimum, une majuscule, un chiffre et un caractère spécial.</p><button name="create_account" value="1">Créer mon compte administrateur</button></form><p><a href="compte.html">Ouvrir la connexion au compte</a></p></details>
+<?php if ($dbError): ?><p class="error" role="alert"><?=h($dbError)?></p><?php else: ?><div class="stats"><div class="stat">Inscriptions<strong><?=$total?></strong></div><div class="stat">Questionnaires reçus<strong><?=$answered?></strong></div><div class="stat">En attente d’avis<strong><?=$total-$answered?></strong></div></div><div class="tools"><input id="search" type="search" placeholder="Rechercher nom, e-mail, pièce…" aria-label="Rechercher"><a class="button" href="?export=xlsx">Télécharger Excel · XLSX</a><a class="button" href="?export=csv">CSV · Excel / Google Sheets</a></div><div class="table-wrap"><table id="entries"><thead><tr><th>Personne</th><th>Contact</th><th>Pièce</th><th>Inscription</th><th>Questionnaire</th></tr></thead><tbody><?php foreach ($rows as $r): ?><tr><td><b><?=h($r['first_name'].' '.$r['last_name'])?></b></td><td><a href="mailto:<?=h($r['email'])?>"><?=h($r['email'])?></a><small><?=h($r['phone'] ?: 'Sans téléphone')?></small></td><td><?=h($r['concept_slug'])?><small>Taille <?=h($r['selected_size'])?></small></td><td><?=h($r['created_at'])?><small><?=h($r['utm_source'])?></small></td><td><?php if ($r['interest_level']!==null): ?><details><summary>Intérêt <?=h((string)$r['interest_level'])?>/5 · Lire les réponses</summary><p><b>Ce qui a plu</b><br><?=h($r['what_appealed'])?></p><p><b>À améliorer</b><br><?=h($r['what_to_improve'])?></p></details><?php else: ?>Avis en attente<?php endif; ?></td></tr><?php endforeach; ?></tbody></table><?php if (!$rows): ?><p class="empty">Aucune inscription enregistrée dans la base déployée.</p><?php endif; ?></div><?php endif; ?></main></div><script>document.querySelector('#search')?.addEventListener('input',e=>{const q=e.target.value.toLocaleLowerCase();document.querySelectorAll('#entries tbody tr').forEach(r=>r.hidden=!r.textContent.toLocaleLowerCase().includes(q))})</script><?php endif; ?></body></html>

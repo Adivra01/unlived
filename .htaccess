@@ -7,7 +7,7 @@ RewriteRule ^(?:data|docs|scripts|outputs)(?:/|$) - [F,L,NC]
 RewriteRule ^\.data(?:/|$) - [F,L,NC]
 RewriteRule ^api/(auth|data)$ api.php [L,QSA]
 </IfModule>
-<FilesMatch "(?i)^(?:\.env.*|auth-mail\.php|.*\.(?:(?:sqlite3?|db)(?:-(?:wal|shm))?|key|py|toml|zip))$">
+<FilesMatch "(?i)^(?:\.env.*|(?:auth-mail|waitlist-export)\.php|.*\.(?:(?:sqlite3?|db)(?:-(?:wal|shm))?|key|py|toml|zip))$">
 Require all denied
 </FilesMatch>
 <IfModule mod_headers.c>

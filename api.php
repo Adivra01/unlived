@@ -15,7 +15,7 @@ function answer(int $status, mixed $data=null, ?string $error=null): never {
     if ($status<400 && isset($db)) { try { for($i=0;$i<3;$i++) pumpAuthMail(); } catch(Throwable $e) {} }
     exit;
 }
-if (!defined('UNLIVED_MAIL_WORKER')) {
+if (!defined('UNLIVED_MAIL_WORKER') && !defined('UNLIVED_AUTH_MAINTENANCE')) {
 if ($_SERVER['REQUEST_METHOD']!=='POST' || ($_SERVER['HTTP_X_UNLIVED_REQUEST']??'')!=='1') answer(403,null,'Requête interdite.');
 $origin=$_SERVER['HTTP_ORIGIN']??''; $host=$_SERVER['HTTP_HOST']??'';
 $scheme=!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off'?'https':'http';
@@ -30,6 +30,7 @@ $folder=__DIR__.'/.data';
 if (!is_dir($folder) && !mkdir($folder,0700,true)) answer(503,null,'Stockage indisponible.');
 @chmod($folder,0700);
 $keyFile=$folder.'/auth.key';
+if (!is_file($keyFile) && is_file($folder.'/auth.sqlite3')) answer(503,null,'Clé de comptes manquante : restaurer auth.key avec sa base.');
 if (!is_file($keyFile)) { $f=@fopen($keyFile,'x'); if ($f) { fwrite($f,random_bytes(32)); fclose($f); @chmod($keyFile,0600); } }
 $key=@file_get_contents($keyFile);
 if ($key===false || strlen($key)!==32) answer(503,null,'Clé du serveur indisponible.');
@@ -43,6 +44,7 @@ try {
     $db->exec('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,email TEXT NOT NULL,email_lookup TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,display_name TEXT NOT NULL,role TEXT NOT NULL,created_at TEXT NOT NULL)');
     $db->exec('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,expires INTEGER NOT NULL)');
     authSchema();
+    if (defined('UNLIVED_AUTH_MAINTENANCE')) return;
     if(defined('UNLIVED_MAIL_WORKER')) {for($i=0;$i<10;$i++)pumpAuthMail();exit;}
     $route=parse_url($_SERVER['REQUEST_URI']??'',PHP_URL_PATH);
     $token=$_COOKIE['unlived_session']??'';
