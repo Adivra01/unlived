@@ -1,0 +1,78 @@
+/* The campaign belongs only to the signed-out account screen. */
+.account-page .account-shell:has(.account-sidebar[hidden]){
+  max-width:none;
+  padding:24px var(--gutter) 48px;
+  gap:24px;
+}
+.account-page .account-shell:has(.account-sidebar[hidden]) .account-content{
+  position:relative;
+  isolation:isolate;
+  display:block;
+  min-height:780px;
+  padding:44px clamp(28px,4vw,72px) 28px;
+  background:#e6ddd2 url('assets/connexion-streetwear.png') right center/cover no-repeat;
+  overflow:hidden;
+}
+.account-page .account-shell:has(.account-sidebar[hidden]) .account-content::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  min-height:0;
+  margin:0;
+  border-radius:0;
+  box-shadow:none;
+  background:linear-gradient(90deg,#e6ddd2f5 0%,#e6ddd2dd 32%,#e6ddd200 57%);
+  z-index:-1;
+  pointer-events:none;
+}
+.account-page .account-shell:has(.account-sidebar[hidden]) .auth-panel{
+  width:44%;
+  max-width:540px;
+  margin:0;
+  padding:0;
+  background:transparent;
+}
+.account-page .auth-panel .account-form input{
+  min-height:62px;
+  padding:17px 20px;
+  background:#f8f5efed;
+}
+.account-page .auth-panel .account-form>.button{min-height:60px}
+.account-page .account-shell:has(.account-sidebar[hidden]) .account-support{
+  max-width:540px;
+  width:44%;
+  flex-wrap:wrap;
+  gap:12px;
+  padding-bottom:0;
+}
+@media(min-width:1600px){
+  .account-page .account-shell:has(.account-sidebar[hidden]) .account-content{min-height:860px}
+}
+@media(max-width:1000px) and (min-width:701px){
+  .account-page .account-shell:has(.account-sidebar[hidden]) .account-content{padding:32px 28px;background-position:62% center}
+  .account-page .account-shell:has(.account-sidebar[hidden]) .auth-panel,
+  .account-page .account-shell:has(.account-sidebar[hidden]) .account-support{width:49%}
+  .account-page .auth-panel h2{font-size:46px}
+}
+@media(max-width:700px){
+  .account-page .account-shell:has(.account-sidebar[hidden]){padding:16px 16px 32px}
+  .account-page .account-shell:has(.account-sidebar[hidden]) .account-content{
+    padding:0 22px 24px;
+    min-height:0;
+    background:#e6ddd2;
+  }
+  .account-page .account-shell:has(.account-sidebar[hidden]) .account-content::before{
+    position:relative;
+    inset:auto;
+    display:block;
+    height:clamp(280px,75vw,430px);
+    min-height:0;
+    margin:0 -22px 28px;
+    background:url('assets/connexion-streetwear.png') right top/cover no-repeat;
+    z-index:auto;
+  }
+  .account-page .account-shell:has(.account-sidebar[hidden]) .auth-panel,
+  .account-page .account-shell:has(.account-sidebar[hidden]) .account-support{width:100%;max-width:none}
+  .account-page .auth-panel h2{font-size:clamp(38px,9vw,52px)}
+  .account-page .auth-panel .account-intro{font-size:15px}
+}
