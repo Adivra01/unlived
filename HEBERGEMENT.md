@@ -8,6 +8,8 @@ La liste d’attente et son questionnaire utilisent `waitlist-api.php` lorsque l
 
 Après le déploiement Git, ouvrir le formulaire de liste d’attente et effectuer une inscription réelle de contrôle. Si une erreur mentionne `pdo_sqlite`, activer l’extension dans hPanel. Le questionnaire suit immédiatement l’inscription.
 
+L’administration de cette liste est disponible à `https://unlived.club/waitlist-admin.php`. Le code d’accès généré pour ce déploiement est conservé uniquement dans le fichier local privé `.data/waitlist-admin-password.txt` ; il ne figure pas dans Git. Cette page montre les inscriptions, les trois réponses et permet d’exporter un CSV pour Excel ou Google Sheets. Les inscriptions faites en local avec Python se trouvent dans une autre base et ne remontent pas automatiquement sur Hostinger.
+
 Les comptes, favoris, commandes, tableaux de bord et autres routes `/api/*` utilisent encore le serveur Python. Ils nécessitent la configuration VPS ci-dessous ou une conversion supplémentaire vers PHP. Ne pas annoncer ces fonctions comme opérationnelles sur l’hébergement Web classique.
 
 ## Offre Hostinger requise pour l’application complète

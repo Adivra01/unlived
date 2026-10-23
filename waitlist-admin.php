@@ -1,0 +1,63 @@
+<?php
+declare(strict_types=1);
+header('X-Content-Type-Options: nosniff');
+header('Cache-Control: no-store');
+header('X-Frame-Options: DENY');
+$https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+session_name('unlived_waitlist_admin');
+session_set_cookie_params(['lifetime'=>0,'path'=>'/','secure'=>$https,'httponly'=>true,'samesite'=>'Strict']);
+session_start();
+$verifier = require __DIR__.'/waitlist-admin-hash.php';
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!hash_equals($_SESSION['csrf'] ?? '', (string)($_POST['csrf'] ?? ''))) { http_response_code(403); exit('Session expirée. Recharge la page.'); }
+    if (isset($_POST['logout'])) { $_SESSION=[]; session_destroy(); header('Location: waitlist-admin.php'); exit; }
+    $attempts = (int)($_SESSION['attempts'] ?? 0);
+    $since = (int)($_SESSION['attempt_time'] ?? 0);
+    if (time()-$since > 900) $attempts=0;
+    if ($attempts >= 8) $error='Trop de tentatives. Réessaie dans 15 minutes.';
+    elseif (hash_equals($verifier, hash('sha256', (string)($_POST['password'] ?? '')))) {
+        session_regenerate_id(true); $_SESSION['admin']=true; $_SESSION['attempts']=0;
+        header('Location: waitlist-admin.php'); exit;
+    } else { $_SESSION['attempts']=$attempts+1; $_SESSION['attempt_time']=time(); $error='Code administrateur incorrect.'; }
+}
+$_SESSION['csrf'] ??= bin2hex(random_bytes(32));
+function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
+function csvcell(?string $v): string { $v=(string)$v; return preg_match('/^[=+\-@\t\r]/u',$v) ? "'".$v : $v; }
+$rows=[]; $dbError='';
+if (!empty($_SESSION['admin'])) {
+    try {
+        $folder=__DIR__.'/.data';
+        $key=file_get_contents($folder.'/waitlist.key');
+        if ($key===false || strlen($key)!==32) throw new RuntimeException('Clé de chiffrement manquante.');
+        $db=new PDO('sqlite:'.$folder.'/waitlist.sqlite3',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+        $decrypt=static function(?string $value) use ($key): string {
+            if ($value===null || $value==='') return '';
+            $raw=base64_decode($value,true);
+            if ($raw===false || strlen($raw)<28) return '[indisponible]';
+            $text=openssl_decrypt(substr($raw,28),'aes-256-gcm',$key,OPENSSL_RAW_DATA,substr($raw,0,12),substr($raw,12,16));
+            return $text===false ? '[indisponible]' : $text;
+        };
+        $query='SELECT w.created_at,w.first_name,w.last_name,w.email,w.phone,w.concept_slug,w.selected_size,w.utm_source,w.utm_campaign,w.utm_content,w.consent_at,f.interest_level,f.what_appealed,f.what_to_improve,f.created_at AS feedback_at FROM launch_waitlist w LEFT JOIN launch_waitlist_feedback f ON f.feedback_token_hash=w.feedback_token_hash ORDER BY w.id DESC';
+        foreach ($db->query($query) as $r) {
+            foreach (['first_name','last_name','email','phone','what_appealed','what_to_improve'] as $column) $r[$column]=$decrypt($r[$column]);
+            $rows[]=$r;
+        }
+        if (($_GET['export'] ?? '')==='csv') {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="unlived-liste-attente.csv"');
+            $out=fopen('php://output','w'); fwrite($out,"\xEF\xBB\xBF");
+            $fields=['created_at','first_name','last_name','email','phone','concept_slug','selected_size','utm_source','utm_campaign','utm_content','consent_at','interest_level','what_appealed','what_to_improve','feedback_at'];
+            fputcsv($out,$fields,';');
+            foreach ($rows as $r) fputcsv($out,array_map(static fn($field)=>csvcell(isset($r[$field]) ? (string)$r[$field] : ''),$fields),';');
+            exit;
+        }
+    } catch (Throwable $e) { error_log('UNLIVED waitlist admin: '.$e->getMessage()); $dbError='La base de la liste d’attente est indisponible. Vérifie PHP pdo_sqlite et les permissions de .data.'; }
+}
+$total=count($rows); $answered=count(array_filter($rows,static fn($r)=>$r['interest_level']!==null));
+?><!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Liste d’attente · Administration UNLIVED</title><style>
+:root{font-family:Inter,Arial,sans-serif;color:#202020;background:#f5f4f1}*{box-sizing:border-box}body{margin:0}a{color:#7a2e38}.layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:100vh}aside{background:#fff;border-right:1px solid #ddd;padding:28px 16px}aside img{width:125px;background:#000;padding:8px}nav{display:grid;gap:5px;margin-top:35px}nav a{display:block;padding:12px 14px;text-decoration:none;color:#353535;border-radius:9px}nav a.active{background:#f3e9eb;color:#7a2e38;font-weight:700}main{padding:35px clamp(20px,4vw,60px);min-width:0}.top{display:flex;align-items:center;justify-content:space-between;gap:20px}h1{font-size:clamp(29px,3vw,42px);margin:12px 0 7px}p{line-height:1.5;color:#666}.stats{display:flex;gap:12px;flex-wrap:wrap;margin:25px 0}.stat{background:#fff;border:1px solid #e1dfdb;padding:18px 24px;min-width:170px;border-radius:11px}.stat strong{display:block;font-size:30px;margin-top:7px}.tools{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}input{border:1px solid #ccc;padding:12px;font:inherit;border-radius:7px;min-width:230px}.button,button{background:#7a2e38;color:#fff;border:0;border-radius:7px;padding:12px 17px;text-decoration:none;font:inherit;cursor:pointer}.table-wrap{overflow:auto;background:#fff;border:1px solid #ddd;border-radius:11px}table{border-collapse:collapse;width:100%;min-width:900px}th,td{text-align:left;padding:15px;border-bottom:1px solid #eceae7;vertical-align:top;font-size:13px}th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#777}td small{display:block;color:#777;margin-top:5px}details{max-width:310px}summary{cursor:pointer;color:#7a2e38}details p{white-space:pre-wrap;color:#333}.login{max-width:420px;margin:12vh auto;background:#fff;padding:35px;border:1px solid #ddd;border-radius:12px}.login label{display:grid;gap:9px;margin:22px 0}.login input{width:100%}.error{color:#9b202d}.logout{background:none;color:#7a2e38;padding:0}.empty{padding:30px}@media(max-width:750px){.layout{display:block}aside{border-right:0;border-bottom:1px solid #ddd;padding:15px}nav{display:flex;overflow:auto;margin-top:14px}nav a{white-space:nowrap}main{padding:22px}}
+</style></head><body>
+<?php if (empty($_SESSION['admin'])): ?><div class="login"><img src="assets/unlived-logo.svg" alt="UNLIVED" width="145" style="background:#000;padding:9px"><h1>Liste d’attente</h1><p>Accès administrateur aux inscriptions et aux réponses.</p><form method="post"><input type="hidden" name="csrf" value="<?=h($_SESSION['csrf'])?>"><label>Code administrateur<input type="password" name="password" autocomplete="current-password" required autofocus></label><button>Se connecter</button></form><?php if ($error): ?><p class="error" role="alert"><?=h($error)?></p><?php endif; ?></div>
+<?php else: ?><div class="layout"><aside><a href="index.html"><img src="assets/unlived-logo.svg" alt="UNLIVED"></a><nav aria-label="Administration"><a class="active" href="waitlist-admin.php">Liste d’attente</a><a href="admin.html">Administration complète</a><a href="index.html">Voir le site</a></nav></aside><main><div class="top"><div><small>ADMINISTRATION / ACTE I</small><h1>Liste d’attente</h1><p>Inscriptions et réponses au questionnaire enregistrées sur ce serveur.</p></div><form method="post"><input type="hidden" name="csrf" value="<?=h($_SESSION['csrf'])?>"><button class="logout" name="logout" value="1">Déconnexion</button></form></div>
+<?php if ($dbError): ?><p class="error" role="alert"><?=h($dbError)?></p><?php else: ?><div class="stats"><div class="stat">Inscriptions<strong><?=$total?></strong></div><div class="stat">Questionnaires reçus<strong><?=$answered?></strong></div><div class="stat">En attente d’avis<strong><?=$total-$answered?></strong></div></div><div class="tools"><input id="search" type="search" placeholder="Rechercher nom, e-mail, pièce…" aria-label="Rechercher"><a class="button" href="?export=csv">Exporter vers Excel / Sheets · CSV</a></div><div class="table-wrap"><table id="entries"><thead><tr><th>Personne</th><th>Contact</th><th>Pièce</th><th>Inscription</th><th>Questionnaire</th></tr></thead><tbody><?php foreach ($rows as $r): ?><tr><td><b><?=h($r['first_name'].' '.$r['last_name'])?></b></td><td><a href="mailto:<?=h($r['email'])?>"><?=h($r['email'])?></a><small><?=h($r['phone'] ?: 'Sans téléphone')?></small></td><td><?=h($r['concept_slug'])?><small>Taille <?=h($r['selected_size'])?></small></td><td><?=h($r['created_at'])?><small><?=h($r['utm_source'])?></small></td><td><?php if ($r['interest_level']!==null): ?><details><summary>Intérêt <?=h((string)$r['interest_level'])?>/5 · Lire les réponses</summary><p><b>Ce qui a plu</b><br><?=h($r['what_appealed'])?></p><p><b>À améliorer</b><br><?=h($r['what_to_improve'])?></p></details><?php else: ?>Avis en attente<?php endif; ?></td></tr><?php endforeach; ?></tbody></table><?php if (!$rows): ?><p class="empty">Aucune inscription enregistrée dans la base déployée.</p><?php endif; ?></div><?php endif; ?></main></div><script>document.querySelector('#search')?.addEventListener('input',e=>{const q=e.target.value.toLocaleLowerCase();document.querySelectorAll('#entries tbody tr').forEach(r=>r.hidden=!r.textContent.toLocaleLowerCase().includes(q))})</script><?php endif; ?></body></html>
