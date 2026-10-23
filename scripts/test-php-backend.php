@@ -56,11 +56,25 @@ $test('restricted test account import and revocation',function()use($db,$key){
  $hash=password_hash('MigrationPassword123!',PASSWORD_BCRYPT,['cost'=>12]);
  $payload=['format'=>'unlived-test-accounts-v1','accounts'=>[['email'=>'admin.test@unlived.example','password_hash'=>$hash],['email'=>'client.test@unlived.example','password_hash'=>$hash]]];
  importTestAccounts($db,$key,json_encode($payload));
- $q=$db->prepare('SELECT * FROM users WHERE email_lookup=?');$q->execute([hash_hmac('sha256','admin.test@unlived.example',$key)]);$u=$q->fetch(PDO::FETCH_ASSOC);
+ $q=$db->prepare('SELECT * FROM users WHERE email_lookup=?');$q->execute([hash_hmac('sha256','contact@unlived.club',$key)]);$u=$q->fetch(PDO::FETCH_ASSOC);
  check($u['role']==='admin'&&password_verify('MigrationPassword123!',$u['password_hash']),'imported hash');
  $db->prepare('INSERT INTO sessions VALUES (?,?,?)')->execute([hash('sha256','session'),$u['id'],time()+1000]);
  importTestAccounts($db,$key,json_encode($payload));check((int)$db->query('SELECT count(*) FROM sessions')->fetchColumn()===0,'revoked session');
  $payload['accounts'][0]['email']='real-admin@example.com';denied(fn()=>importTestAccounts($db,$key,json_encode($payload)));
+});
+$test('admin email migration preserves identity and rejects collisions',function()use($db,$key){
+ $db->exec('SAVEPOINT email_test');
+ try {
+  $target=hash_hmac('sha256','contact@unlived.club',$key);$source=hash_hmac('sha256','admin.test@unlived.example',$key);
+  $query=$db->prepare('SELECT * FROM users WHERE email_lookup=?');$query->execute([$target]);$before=$query->fetch(PDO::FETCH_ASSOC);
+  $db->prepare('UPDATE users SET email=?,email_lookup=? WHERE id=?')->execute([cryptField('admin.test@unlived.example'),$source,$before['id']]);
+  $db->exec('RELEASE email_test');
+  $payload=['format'=>'unlived-accounts-v2','accounts'=>[['email'=>'contact@unlived.club','password_hash'=>$before['password_hash']],['email'=>'client.test@unlived.example','password_hash'=>password_hash('Client123!',PASSWORD_BCRYPT,['cost'=>12])]]];
+  importTestAccounts($db,$key,json_encode($payload));$query->execute([$target]);$after=$query->fetch(PDO::FETCH_ASSOC);
+  check($after['id']===$before['id']&&$after['password_hash']===$before['password_hash'],'identity and password preserved');$query->execute([$source]);check(!$query->fetch(),'old email removed');
+  $legacyId=uid();$db->prepare('INSERT INTO users(id,email,email_lookup,password_hash,display_name,role,created_at,email_verified) VALUES (?,?,?,?,?,?,?,1)')->execute([$legacyId,cryptField('admin.test@unlived.example'),$source,$before['password_hash'],cryptField('Legacy'),'admin',nowUtc()]);
+  denied(fn()=>importTestAccounts($db,$key,json_encode($payload)));$query->execute([$target]);check($query->fetch(PDO::FETCH_ASSOC)['id']===$before['id'],'collision leaves target unchanged');$db->prepare('DELETE FROM users WHERE id=?')->execute([$legacyId]);
+ } catch(Throwable $e){throw $e;}
 });
 $test('deleting products also removes variants and media',function()use($product,$admin){transaction(fn()=>dataQuery(['table'=>'products','action'=>'delete','filters'=>[['op'=>'eq','key'=>'id','value'=>$product['id']]]],$admin));check(!array_filter(entities('product_variants'),fn($r)=>$r['product_id']===$product['id']),'cascade');});
 $test('private favorites never surface to administrators or other accounts',function()use($client,$buyer,$admin,$db){
