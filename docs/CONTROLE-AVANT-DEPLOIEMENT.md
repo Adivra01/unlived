@@ -31,3 +31,9 @@ La cohérence du sitemap et des canoniques suit les indications de [Google sur l
 - `mentions-legales.html` contient encore la mention « Informations en cours de finalisation » : identité de l’éditeur, adresse professionnelle, coordonnées directes, immatriculation applicable et hébergeur restent à renseigner.
 
 Cette revue ne déploie pas les fichiers sur Hostinger et ne remplace pas la vérification de la version effectivement publiée.
+
+## Vérification effective sur Hostinger
+
+L’accès protégé à la page waitlist a été utilisé pour restaurer les deux comptes dans la base du serveur. Les connexions ont ensuite été testées via l’API HTTPS publique : contact@unlived.club renvoie le rôle admin, client.test@unlived.example renvoie le rôle client, avec HTTP 200 et une session conservée pour chacun. Les sessions ouvertes uniquement pour cette vérification ont été déconnectées. Les mots de passe du transfert sont inchangés.
+
+Le contrôle afficher/masquer est ajouté aux champs de mot de passe des pages compte, administration, sécurité et waitlist, y compris les champs ajoutés dynamiquement. Il est testé sans modifier la valeur saisie ni soumettre le formulaire au clic ; le mot de passe est remasqué à la soumission. Les fichiers d’interface correspondants doivent encore être publiés pour que ce contrôle apparaisse sur le site.
