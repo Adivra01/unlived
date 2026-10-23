@@ -8,6 +8,7 @@ header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
+if(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')header('Strict-Transport-Security: max-age=15552000');
 function answer(int $status, mixed $data=null, ?string $error=null): never {
     global $db,$authTransaction;
     if ($authTransaction) { $db->exec($status<400?'COMMIT':'ROLLBACK');$authTransaction=false; }

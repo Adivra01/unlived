@@ -6,17 +6,32 @@ function nowUtc(): string {return gmdate('c');}
 function uid(): string {return bin2hex(random_bytes(16));}
 function needUser(?array $u,bool $admin=false): void {if(!$u || ($admin && $u['role']!=='admin'))throw new DomainException('Accès non autorisé.');}
 function shortText(mixed $v,int $n=250): string {if(!is_scalar($v)&&$v!==null)throw new InvalidArgumentException('Texte invalide.');return mbCut(trim((string)$v),$n);}
-function mbCut(string $v,int $n): string {return function_exists('mb_substr')?mb_substr($v,0,$n):substr($v,0,$n);}
+function mbCut(string $v,int $n): string {if(function_exists('mb_substr'))return mb_substr($v,0,$n);$chars=preg_split('//u',$v,-1,PREG_SPLIT_NO_EMPTY);if($chars===false)throw new InvalidArgumentException('Texte UTF-8 invalide.');return implode('',array_slice($chars,0,$n));}
 function moneyValue(mixed $v): int {if(!is_int($v)||$v<0)throw new InvalidArgumentException('Montant invalide.');return $v;}
 function entityTable(string $t): string {if(!in_array($t,array_merge(DATA_TABLES,BUSINESS_TABLES),true))throw new DomainException('Table interdite.');return 'app_'.$t;}
-function encodeEntity(array $r): array {foreach(['first_name','last_name','email','phone','customer_name','customer_email','name','message','what_appealed','what_to_improve','reason','address','display_name'] as $f)if(isset($r[$f])&&!str_starts_with((string)$r[$f],'enc:php:'))$r[$f]='enc:php:'.cryptField((string)$r[$f]);return $r;}
-function decodeEntity(array $r): array {foreach($r as $f=>$v)if(is_string($v)&&str_starts_with($v,'enc:php:'))$r[$f]=openField(substr($v,8));return $r;}
+function encodeEntity(array $r): array {
+ $private=['first_name','last_name','email','phone','customer_name','customer_email','name','message','what_appealed','what_to_improve','reason','address','display_name','billing_address','shipping_address','payment_reference','transaction_id'];
+ foreach($r as $field=>$value){
+  if(in_array($field,$private,true)&&$value!==null)$r[$field]='enc:php-json:'.cryptField(json_encode($value,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE));
+  elseif(is_array($value))$r[$field]=encodeEntity($value);
+ }return $r;
+}
+function decodeEntity(array $r): array {
+ foreach($r as $field=>$value){
+  if(is_string($value)&&str_starts_with($value,'enc:php-json:'))$r[$field]=json_decode(openField(substr($value,13)),true,64,JSON_THROW_ON_ERROR);
+  elseif(is_string($value)&&str_starts_with($value,'enc:php:'))$r[$field]=openField(substr($value,8));
+  elseif(is_array($value))$r[$field]=decodeEntity($value);
+ }return $r;
+}
+function rejectCardData(array $values): void {
+ foreach($values as $field=>$value){if(in_array(strtolower((string)$field),['card_number','pan','cvv','cvc','card_cvc','card_expiry','card_security_code'],true))throw new InvalidArgumentException('Les données de carte doivent être traitées par le prestataire de paiement, jamais enregistrées ici.');if(is_array($value))rejectCardData($value);}
+}
 function entities(string $t): array {global $db;return array_map(static fn($s)=>decodeEntity(json_decode($s,true,64,JSON_THROW_ON_ERROR)),$db->query('SELECT data FROM '.entityTable($t).' ORDER BY rowid')->fetchAll(PDO::FETCH_COLUMN));}
 function storeEntity(string $t,array $r): array {global $db;$s=$db->prepare('INSERT INTO '.entityTable($t).'(id,data) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data');$s->execute([$r['id'],json_encode(encodeEntity($r),JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)]);return $r;}
 function addEntity(string $t,array $v): array {return storeEntity($t,array_merge(['id'=>uid(),'created_at'=>nowUtc()],$v));}
 function removeEntity(string $t,string $id): void {global $db;$s=$db->prepare('DELETE FROM '.entityTable($t).' WHERE id=?');$s->execute([$id]);}
 function ownedEntities(string $t,array $u): array {return array_values(array_filter(entities($t),static fn($r)=>($r['user_id']??null)===$u['id']));}
-function settings(): array {return entities('settings')[0];}
+function settings(): array {return array_merge(['announcement_enabled'=>true,'announcement_scroll'=>true,'announcement_duration'=>25,'announcement_code'=>''],entities('settings')[0]);}
 function auditEvent(array $u,string $action,string $entity): void {addEntity('audit_events',['user_id'=>$u['id'],'action'=>$action,'entity'=>$entity]);}
 function initBusiness(): void {
  global $db;
@@ -46,6 +61,10 @@ function initBusiness(): void {
     }
    }
    $db->exec("INSERT INTO app_migrations VALUES ('waitlist-v1')");
+  }
+  if(!$db->query("SELECT 1 FROM app_migrations WHERE name='personal-data-v2'")->fetchColumn()) {
+   foreach(array_merge(DATA_TABLES,BUSINESS_TABLES) as $t)foreach(entities($t) as $r)storeEntity($t,$r);
+   $db->exec("INSERT INTO app_migrations VALUES ('personal-data-v2')");
   }
   $db->exec('COMMIT');
  } catch(Throwable $e){$db->exec('ROLLBACK');throw $e;}
@@ -104,6 +123,7 @@ function dataQuery(array $body,?array $user): array {
   $incoming=$body['values']??[];if(!is_array($incoming))throw new InvalidArgumentException('Données invalides.');$incoming=array_is_list($incoming)?$incoming:[$incoming];if(count($incoming)>100)throw new InvalidArgumentException('Trop de lignes.');$result=[];
   foreach($incoming as $v) {
    if(!is_array($v)||array_is_list($v))throw new InvalidArgumentException('Ligne invalide.');
+   if(in_array($t,['orders','order_items'],true))rejectCardData($v);
    if($t==='orders') {
     foreach(['payment_verified','payment_status','paid_at','commission_cents','commission_percent','total_cents','affiliate_code'] as $f)if(array_key_exists($f,$v))throw new DomainException('Le paiement doit être confirmé par le prestataire.');
     if(in_array($v['status']??'', ['processing','shipped','delivered'],true))foreach($rows as $r)if(($r['payment_verified']??false)!==true)throw new InvalidArgumentException('Paiement non confirmé.');
@@ -220,7 +240,7 @@ function saveProduct(array $v,array $user): array {
 }
 function businessAction(array $body,?array $user): mixed {
  global $db;$action=$body['action']??'';$v=$body['values']??[];if(!is_array($v))throw new InvalidArgumentException('Données invalides.');
- if($action==='public_settings')return array_intersect_key(settings(),array_flip(['announcement','announcement_link','commission_percent','withdrawal_min_cents','commission_hold_days']));
+ if($action==='public_settings')return array_intersect_key(settings(),array_flip(['announcement','announcement_link','announcement_enabled','announcement_scroll','announcement_duration','announcement_code','commission_percent','withdrawal_min_cents','commission_hold_days']));
  if($action==='coupon'){$code=strtoupper(shortText($v['code']??'',40));foreach(entities('discounts') as $r)if($r['code']===$code&&$r['active']&&(!$r['expires']||$r['expires']>=gmdate('Y-m-d')))return ['code'=>$code,'percent'=>$r['percent'],'note'=>'Applicable à une future commande éligible ; aucun paiement actuellement.'];throw new InvalidArgumentException('Code invalide ou expiré.');}
  needUser($user);
  if($action==='account'){$aff=ownedEntities('affiliates',$user)[0]??null;return ['public_origin'=>mailOrigin(),'user_id'=>$user['id'],'role'=>$user['role'],'affiliate'=>$aff,'balance'=>$aff?affiliateBalance($aff):null,'stats'=>$aff?trafficStats(30,$aff['code']):null,'cart'=>ownedEntities('carts',$user)[0]['items']??[],'closure'=>ownedEntities('closure_requests',$user),'settings'=>settings()];}
@@ -242,6 +262,7 @@ function businessAction(array $body,?array $user): mixed {
  }
  if($action==='close_request'){if(ownedEntities('closure_requests',$user))throw new InvalidArgumentException('Une demande existe déjà.');return addEntity('closure_requests',['user_id'=>$user['id'],'reason'=>shortText($v['reason']??'',1000),'status'=>'requested']);}
  needUser($user,true);
+ if($action==='requests_summary')return ['pending'=>count(array_filter(entities('closure_requests'),fn($r)=>$r['status']==='requested'))];
  if($action==='mail_status'){$c=mailConfig();return ['configured'=>(bool)($c['RESEND_API_KEY']&&$c['RESEND_FROM']),'pending'=>(int)$db->query("SELECT count(*) FROM auth_outbox WHERE status='pending' AND attempts<5")->fetchColumn(),'failed'=>(int)$db->query('SELECT count(*) FROM auth_outbox WHERE attempts>=5')->fetchColumn()];}
  if($action==='mail_retry'){$s=$db->prepare("UPDATE auth_outbox SET status='pending',attempts=0,next_attempt=? WHERE attempts>=5");$s->execute([time()]);$count=$s->rowCount();auditEvent($user,'mail_retry',(string)$count);return ['retried'=>$count];}
  if($action==='product_save')return saveProduct($v,$user);
@@ -249,6 +270,9 @@ function businessAction(array $body,?array $user): mixed {
  if($action==='dashboard'){$days=max(1,min(366,(int)($v['days']??30)));$users=[];foreach($db->query('SELECT * FROM users')->fetchAll(PDO::FETCH_ASSOC) as $u)$users[]=array_merge(publicUser($u),['role'=>$u['role'],'created_at'=>$u['created_at']]);$aff=[];foreach(entities('affiliates') as $a)$aff[]=array_merge($a,['balance'=>affiliateBalance($a),'stats'=>trafficStats($days,$a['code'])]);return ['stats'=>trafficStats($days,$v['affiliate']??null,$v['campaign']??null),'users'=>$users,'products'=>entities('products'),'variants'=>entities('product_variants'),'media'=>entities('product_media'),'affiliates'=>$aff,'campaigns'=>entities('campaigns'),'discounts'=>entities('discounts'),'settings'=>settings(),'withdrawals'=>entities('withdrawals'),'closures'=>entities('closure_requests'),'audit'=>array_reverse(array_slice(entities('audit_events'),-100))];}
  if($action==='settings_save') {
   $s=settings();$percent=(int)($v['commission_percent']??$s['commission_percent']);if($percent<0||$percent>100)throw new InvalidArgumentException('Commission entre 0 et 100 %.');$link=shortText($v['announcement_link']??$s['announcement_link'],250);if(!preg_match('/^[a-z0-9-]+\.html(?:#[a-z0-9-]+)?$/D',$link))throw new InvalidArgumentException('Lien interne attendu.');$methods=$v['withdrawal_methods']??$s['withdrawal_methods'];if(!is_array($methods)||!count($methods)||count($methods)>3||array_diff($methods,['mobile_money','bank_transfer','paypal']))throw new InvalidArgumentException('Modes de retrait invalides.');
+  $duration=$v['announcement_duration']??$s['announcement_duration'];if(!is_int($duration)||$duration<5||$duration>180)throw new InvalidArgumentException('Durée de défilement entre 5 et 180 secondes.');
+  foreach(['announcement_enabled','announcement_scroll'] as $field)if(isset($v[$field])&&!is_bool($v[$field]))throw new InvalidArgumentException('Option de bandeau invalide.');
+  $s=array_merge($s,['announcement_enabled'=>$v['announcement_enabled']??$s['announcement_enabled'],'announcement_scroll'=>$v['announcement_scroll']??$s['announcement_scroll'],'announcement_duration'=>$duration,'announcement_code'=>shortText($v['announcement_code']??$s['announcement_code'],40)]);
   $s=array_merge($s,['announcement'=>shortText($v['announcement']??$s['announcement'],200),'announcement_link'=>$link,'commission_percent'=>$percent,'withdrawal_min_cents'=>moneyValue($v['withdrawal_min_cents']??$s['withdrawal_min_cents']),'commission_hold_days'=>max(0,min(365,(int)($v['commission_hold_days']??$s['commission_hold_days']))),'withdrawal_methods'=>array_values(array_unique($methods))]);storeEntity('settings',$s);auditEvent($user,$action,'site');return $s;
  }
  if($action==='campaign_create'){$slug=strtolower(shortText($v['slug']??'',60));if(!preg_match('/^[a-z0-9-]{3,60}$/D',$slug))throw new InvalidArgumentException('Identifiant invalide.');foreach(entities('campaigns') as $r)if($r['slug']===$slug)throw new InvalidArgumentException('Identifiant déjà utilisé.');$r=addEntity('campaigns',['name'=>shortText($v['name']??'',100),'slug'=>$slug,'source'=>shortText($v['source']??'',80),'url'=>mailOrigin().'/boutique.html?utm_source='.$slug.'&utm_campaign='.$slug]);auditEvent($user,$action,$r['id']);return $r;}

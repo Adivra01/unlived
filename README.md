@@ -48,7 +48,7 @@ Si le taux manque, affichage en euros. Les données comptables d’origine ne so
 
 ## Hébergement
 
-L’application PHP complète peut être déployée sur l’hébergement Web Hostinger avec PHP 8.1+, SQLite et OpenSSL.
+L’application PHP complète peut être déployée sur l’hébergement Web Hostinger avec PHP 8.3 maintenu et à jour, SQLite et OpenSSL.
 Le tableau de bord ne requiert plus de backend Python hébergé. Préserver `.data` et ses clés lors des déploiements.
 La configuration Resend doit aussi être présente sur le serveur ; le fichier `.env` local n’est pas publié par Git.
 Voir [HEBERGEMENT.md](HEBERGEMENT.md) pour la procédure et les vérifications.

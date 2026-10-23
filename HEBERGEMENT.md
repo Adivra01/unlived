@@ -12,7 +12,7 @@ Le serveur de prévisualisation `python3 server.py --port 8081` transmet ses req
 
 1. Sauvegarder le dossier privé `.data` de l’hébergement, en conservant ensemble les bases et leurs clés.
 2. Déployer le dépôt à jour, notamment `.htaccess`, `api.php`, `auth-mail.php`, `business-api.php`, `translations.php`, `waitlist-api.php`, `waitlist-admin.php`, `waitlist-export.php`, `auth-test-import.php`, les fichiers HTML/JS et `data/catalog.json`. Ne pas remplacer `.data` ni envoyer une base locale à sa place.
-3. Utiliser PHP 8.1+ avec `pdo_sqlite` et `openssl`. Le dossier du site doit permettre la création du répertoire privé `.data` par PHP. `.htaccess` bloque son accès Web et celui des modules internes.
+3. Utiliser PHP 8.3 maintenu et à jour avec `pdo_sqlite` et `openssl`. Le dossier du site doit permettre la création du répertoire privé `.data` par PHP. `.htaccess` bloque son accès Web et celui des modules internes.
 4. Configurer les secrets Resend sur l’hébergement : `RESEND_API_KEY`, `RESEND_FROM`, `EMAIL_PUBLIC_ORIGIN=https://unlived.club`. Le fichier `.env` local n’est pas publié par Git ; sa configuration doit également exister sur Hostinger pour les e-mails en ligne.
 5. Configurer une tâche cron chaque minute : `php /chemin/du/site/scripts/send-auth-emails.php`. Elle reprend les envois non aboutis sans nécessiter une visite du site.
 6. Vérifier la connexion, le catalogue, une modification de variante, une inscription et son avis, le tableau de bord et les exports.
@@ -80,3 +80,11 @@ Les favoris sont privés à leur propriétaire pour tous les rôles, y compris a
 Le panier connecté est chargé depuis le serveur, même lorsqu’il est vide. Les écritures vérifient le compte attendu, et le navigateur ignore les réponses d’un ancien compte. Les données personnelles de l’espace client sont effacées de l’interface à la déconnexion. Le panier invité reste indépendant ; il n’est pas fusionné silencieusement avec celui d’un client.
 
 Test fonctionnel de l’interface sans réseau : `UNLIVED_JSDOM_MODULE=/chemin/vers/jsdom node scripts/test-client-isolation.cjs`. Il utilise une API simulée et vérifie deux clients, les réponses retardées, les rubriques, le menu mobile et la déconnexion. Il ne constitue pas un contrôle visuel dans un navigateur réel.
+
+## Bande défilante et résiliations
+
+Marketing permet de régler le texte, un code facultatif, le lien interne, la visibilité, le mode fixe/défilant et la durée de passage (5 à 180 secondes). Le bandeau est affiché au-dessus de la navigation publique et dans l’espace client. Il peut être mis en pause ; les préférences de réduction des animations sont respectées. L’aperçu reprend les paramètres enregistrés.
+
+Les demandes de résiliation sont privées au client, stockées dans la base centrale et présentées dans Demandes côté administrateur. Le badge du menu est actualisé périodiquement lorsque l’administration est visible. Ouvrir cette rubrique recharge les demandes. Le traitement reste distinct d’une suppression définitive : le client reçoit un statut dans son espace.
+
+Les modules d’animation GSAP sont désormais dans `assets/vendor/` : publier ce dossier avec les fichiers HTML et `.htaccess`. La politique CSP n’autorise plus les scripts de CDN. La nouvelle migration `personal-data-v2` réencode les données personnelles existantes avec conservation des types et compatibilité avec les anciens champs chiffrés. Sauvegarder le dossier privé avant mise à jour et contrôler ensuite le site avec les nouvelles règles HTTPS/CSP sur Hostinger.

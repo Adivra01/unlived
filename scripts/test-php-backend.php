@@ -97,4 +97,43 @@ $test('original Python data-query waitlist protocol remains compatible',function
  transaction(fn()=>dataQuery(['table'=>'launch_waitlist_feedback','action'=>'insert','values'=>['feedback_token'=>$token,'interest_level'=>4,'what_appealed'=>'Le design rouge','what_to_improve'=>'Plus de choix']],null));
  check(count(array_filter(entities('launch_waitlist_feedback'),fn($r)=>$r['feedback_token']===hash('sha256',$token)))===1,'legacy client feedback');
 });
+$test('announcement configuration is admin-only and validated',function()use($admin,$client){
+ transaction(fn()=>businessAction(['action'=>'settings_save','values'=>['announcement'=>'La nouvelle édition arrive','announcement_code'=>'DAY10','announcement_duration'=>42,'announcement_enabled'=>true,'announcement_scroll'=>true]],$admin));
+ $public=businessAction(['action'=>'public_settings'],null);check($public['announcement_duration']===42&&$public['announcement_code']==='DAY10','public configuration');
+ denied(fn()=>businessAction(['action'=>'settings_save','values'=>['announcement_duration'=>1]],$admin));
+ denied(fn()=>businessAction(['action'=>'settings_save','values'=>['announcement_duration'=>'20']],$admin));
+ denied(fn()=>businessAction(['action'=>'settings_save','values'=>['announcement_scroll'=>'false']],$admin));
+ denied(fn()=>businessAction(['action'=>'settings_save','values'=>['announcement'=>'Client override']],$client));
+});
+$test('structured personal data remains typed and encrypted',function()use($db){
+ $address=['city'=>'Bamako','street'=>'Fixture street 123','contacts'=>[['email'=>'private@example.com']]];
+ $r=addEntity('orders',['shipping_address'=>$address,'metadata'=>['email'=>'nested@example.com'],'payment_reference'=>'provider-fixture-reference']);
+ $raw=$db->query("SELECT data FROM app_orders WHERE id='".$r['id']."'")->fetchColumn();
+ foreach(['Fixture street','private@example.com','nested@example.com','provider-fixture-reference'] as $value)check(!str_contains($raw,$value),'private value encrypted');
+ $decoded=array_column(entities('orders'),null,'id')[$r['id']];check($decoded['shipping_address']===$address&&$decoded['metadata']['email']==='nested@example.com','types preserved');
+ removeEntity('orders',$r['id']);
+ $legacy=['id'=>'legacy-fixture','message'=>'enc:php:'.cryptField('Historical private text')];$db->prepare('INSERT INTO app_contact_messages(id,data) VALUES (?,?)')->execute([$legacy['id'],json_encode($legacy)]);
+ check(array_column(entities('contact_messages'),null,'id')['legacy-fixture']['message']==='Historical private text','legacy encryption readable');
+});
+$test('SQL injection and raw card payloads are rejected',function()use($admin,$db){
+ $count=(int)$db->query('SELECT count(*) FROM users')->fetchColumn();
+ denied(fn()=>dataQuery(['table'=>'products; DROP TABLE users; --','action'=>'select'],$admin));
+ check(!dataQuery(['table'=>'products','action'=>'select','filters'=>[['op'=>'eq','key'=>'id OR 1=1 --','value'=>"' OR 1=1 --"]]],$admin),'filter does not become SQL');
+ denied(fn()=>dataQuery(['table'=>'orders','action'=>'insert','values'=>['metadata'=>['card_number'=>'4242424242424242','cvv'=>'123']]],$admin));
+ check((int)$db->query('SELECT count(*) FROM users')->fetchColumn()===$count,'users unchanged');
+});
+$test('closure requests reach admin without exposing other clients',function()use($admin,$client,$buyer){
+ transaction(fn()=>businessAction(['action'=>'close_request','values'=>['reason'=>'Je souhaite résilier mon compte']],$buyer));
+ $requests=businessAction(['action'=>'dashboard'],$admin)['closures'];check((bool)array_filter($requests,fn($r)=>$r['user_id']===$buyer['id']),'administrator receives request');
+ check(businessAction(['action'=>'requests_summary'],$admin)['pending']===1,'pending badge');
+ denied(fn()=>businessAction(['action'=>'requests_summary'],$client));
+ check(!array_filter(businessAction(['action'=>'account'],$client)['closure'],fn($r)=>$r['user_id']===$buyer['id']),'client cannot see other request');
+});
+$test('existing structured personal data is migrated atomically',function()use($db){
+ $row=['id'=>'old-address-fixture','shipping_address'=>['street'=>'Private old street','city'=>'Bamako'],'metadata'=>['email'=>'old-private@example.com']];
+ $db->prepare('INSERT INTO app_orders(id,data) VALUES (?,?)')->execute([$row['id'],json_encode($row)]);
+ $db->exec("DELETE FROM app_migrations WHERE name='personal-data-v2'");initBusiness();
+ $raw=$db->query("SELECT data FROM app_orders WHERE id='old-address-fixture'")->fetchColumn();check(!str_contains($raw,'Private old street')&&!str_contains($raw,'old-private@example.com'),'historical private data encrypted');
+ check(array_column(entities('orders'),null,'id')[$row['id']]['shipping_address']===$row['shipping_address'],'structured address preserved');initBusiness();check((int)$db->query("SELECT count(*) FROM app_migrations WHERE name='personal-data-v2'")->fetchColumn()===1,'migration idempotent');removeEntity('orders',$row['id']);
+});
 echo "$checks PHP integration tests passed (temporary database only).\n";

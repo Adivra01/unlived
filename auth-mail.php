@@ -21,7 +21,7 @@ function validatePassword(string $p): void {
 function hashAuthPassword(string $password): string {
     validatePassword($password);$algorithm=defined('PASSWORD_ARGON2ID')?constant('PASSWORD_ARGON2ID'):PASSWORD_BCRYPT;
     if($algorithm===PASSWORD_BCRYPT && strlen($password)>72)throw new InvalidArgumentException('Sur cet hébergement, le mot de passe doit contenir au maximum 72 octets.');
-    return password_hash($password,$algorithm);
+    return password_hash($password,$algorithm,$algorithm===PASSWORD_BCRYPT?['cost'=>12]:[]);
 }
 function authSchema(): void {
     global $db;

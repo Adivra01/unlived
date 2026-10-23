@@ -1,0 +1,1 @@
+document.querySelector('#search')?.addEventListener('input',e=>{const q=e.target.value.toLocaleLowerCase();document.querySelectorAll('#entries tbody tr').forEach(r=>r.hidden=!r.textContent.toLocaleLowerCase().includes(q))})

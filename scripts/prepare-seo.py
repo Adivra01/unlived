@@ -18,7 +18,7 @@ def prepare(origin):
   crumbs=[{'@type':'ListItem','position':1,'name':'Accueil','item':base}]
   if filename.startswith('day-one'):crumbs.append({'@type':'ListItem','position':2,'name':'La boutique','item':urljoin(base,'boutique.html')})
   if filename!='index.html':crumbs.append({'@type':'ListItem','position':len(crumbs)+1,'name':label,'item':url})
-  graph=[{'@type':'Organization','@id':base+'#organization','name':'UNLIVED','url':base,'logo':urljoin(base,'assets/unlived-logo.svg')},{'@type':'WebSite','@id':base+'#website','name':'UNLIVED','url':base,'inLanguage':'fr','publisher':{'@id':base+'#organization'}},{'@type':'WebPage','@id':url+'#page','url':url,'name':label,'isPartOf':{'@id':base+'#website'},'inLanguage':'fr'}]
+  graph=[{'@type':'Organization','@id':base+'#organization','name':'UNLIVED','url':base,'email':'contact@unlived.club','logo':urljoin(base,'assets/unlived-logo.svg')},{'@type':'WebSite','@id':base+'#website','name':'UNLIVED','url':base,'inLanguage':'fr','publisher':{'@id':base+'#organization'}},{'@type':'WebPage','@id':url+'#page','url':url,'name':label,'isPartOf':{'@id':base+'#website'},'inLanguage':'fr'}]
   if filename!='index.html':graph.append({'@type':'BreadcrumbList','itemListElement':crumbs})
   def product(m):
    d=json.loads(m[1]);d['url']=url;d['image']=[urljoin(base,'assets/'+urlsplit(x).path.rsplit('/',1)[-1]) for x in d.get('image',[])];d.pop('offers',None)

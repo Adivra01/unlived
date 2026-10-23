@@ -100,6 +100,15 @@ def query(db,body,user):
         for values in incoming:
             if not isinstance(values,dict):raise ValueError('Données invalides.')
             if table=='customer_favorites' and values.get('user_id',user['id'])!=user['id']:raise PermissionError('Ce favori appartient à un autre compte.')
+            if table in ('orders','order_items'):
+                def reject_card(value):
+                    if isinstance(value,dict):
+                        for key,item in value.items():
+                            if str(key).lower() in ('card_number','pan','cvv','cvc','card_cvc','card_expiry','card_security_code'):raise ValueError('Les données de carte doivent être traitées par le prestataire de paiement.')
+                            reject_card(item)
+                    elif isinstance(value,list):
+                        for item in value:reject_card(item)
+                reject_card(values)
             if table=='orders':
                 if any(k in values for k in ('payment_verified','payment_status','paid_at','commission_cents','commission_percent','total_cents','affiliate_code')):raise PermissionError('La confirmation des paiements nécessite le prestataire de paiement.')
                 if values.get('status') in ('processing','shipped','delivered') and any(r.get('payment_verified') is not True for r in selected):raise ValueError('Le paiement doit être confirmé avant la production.')

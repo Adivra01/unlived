@@ -2,19 +2,26 @@ Options -Indexes
 RedirectMatch 403 ^/\.data(?:/|$)
 <IfModule mod_rewrite.c>
 RewriteEngine On
+RewriteCond %{HTTP_HOST} ^www\.unlived\.club$ [NC,OR]
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://unlived.club%{REQUEST_URI} [R=301,L]
 RewriteRule (^|/)\.(?!well-known(?:/|$)) - [F,L,NC]
 RewriteRule ^(?:data|docs|scripts|outputs)(?:/|$) - [F,L,NC]
 RewriteRule ^\.data(?:/|$) - [F,L,NC]
 RewriteRule ^api/translations/(fr|en|es|it|ar)$ translations.php [L]
 RewriteRule ^api/(auth|data|business|track|waitlist)$ api.php [L,QSA]
 </IfModule>
-<FilesMatch "(?i)^(?:\.env.*|(?:auth-mail|business-api|auth-test-import|waitlist-export)\.php|.*\.(?:(?:sqlite3?|db)(?:-(?:wal|shm))?|key|py|toml|zip))$">
+<FilesMatch "(?i)^(?:\.env.*|(?:auth-mail|business-api|auth-test-import|waitlist-export|waitlist-admin-hash)\.php|.*\.(?:(?:sqlite3?|db)(?:-(?:wal|shm|journal))?|key|py|toml|zip))$">
 Require all denied
 </FilesMatch>
 <IfModule mod_headers.c>
 Header always set Referrer-Policy "no-referrer"
+Header always set Strict-Transport-Security "max-age=15552000"
+Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-63GWVpdF8e91ZYuKppRs5/JOA8DddqDgxgT5YdH+2LY='; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self' https://api.country.is https://api.frankfurter.dev; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
 Header always set X-Frame-Options "DENY"
 Header always set X-Content-Type-Options "nosniff"
+Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+Header always set X-Permitted-Cross-Domain-Policies "none"
 <Files "auth.html">
 Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 </Files>

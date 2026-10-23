@@ -9,10 +9,14 @@ def init():
  with d.connect() as db:
   for t in TABLES:db.execute(f'CREATE TABLE IF NOT EXISTS {t}(id TEXT PRIMARY KEY,data TEXT NOT NULL CHECK(json_valid(data)))')
   if not d.rows(db,'settings'):d.save(db,'settings',{'id':'site','announcement':'ACTE I: DAY ONE — Le premier chapitre.','announcement_link':'boutique.html','commission_percent':20,'withdrawal_min_cents':2000,'commission_hold_days':30,'withdrawal_methods':['mobile_money','bank_transfer']})
+  if not db.execute("SELECT 1 FROM migrations WHERE name='personal-data-v2'").fetchone():
+   for table in d.TABLES+TABLES:
+    for row in d.rows(db,table):d.save(db,table,row)
+   db.execute("INSERT INTO migrations VALUES ('personal-data-v2')")
 def add(db,table,values):
  row={'id':str(uuid.uuid4()),'created_at':d.now(),**values};d.save(db,table,row);return row
 def audit(db,user,action,entity):add(db,'audit_events',{'user_id':user['id'],'action':action,'entity':entity})
-def config(db):return d.rows(db,'settings')[0]
+def config(db):return {'announcement_enabled':True,'announcement_scroll':True,'announcement_duration':25,'announcement_code':'',**d.rows(db,'settings')[0]}
 def require(user,admin=False):
  if not user or (admin and user['role']!='admin'):raise PermissionError('Accès non autorisé.')
 def exclude_ip(db,ip):
@@ -118,7 +122,7 @@ def balance(db,affiliate):
 def handle(db,body,user):
  action=body.get('action');v=body.get('values') or {}
  if action=='public_settings':
-  s=config(db);return {k:s[k] for k in ('announcement','announcement_link','commission_percent','withdrawal_min_cents','commission_hold_days')}
+  s=config(db);return {k:s[k] for k in ('announcement','announcement_link','announcement_enabled','announcement_scroll','announcement_duration','announcement_code','commission_percent','withdrawal_min_cents','commission_hold_days')}
  if action=='coupon':
   code=text(v.get('code'),40).upper();row=next((r for r in d.rows(db,'discounts') if r['code']==code and r['active']),None)
   if not row or row.get('expires') and row['expires']<datetime.now(timezone.utc).date().isoformat():raise ValueError('Code invalide ou expiré.')
@@ -166,6 +170,7 @@ def handle(db,body,user):
   if owned(db,'closure_requests',user):raise ValueError('Une demande existe déjà.')
   return add(db,'closure_requests',{'user_id':user['id'],'reason':text(v.get('reason'),1000),'status':'requested'})
  require(user,True)
+ if action=='requests_summary':return {'pending':sum(r['status']=='requested' for r in d.rows(db,'closure_requests'))}
  if action=='mail_status':
   import auth_service
   settings=auth_service.config()
@@ -187,6 +192,11 @@ def handle(db,body,user):
   if not re.fullmatch(r'[a-z0-9-]+\.html(?:#[a-z0-9-]+)?',link):raise ValueError('Lien interne attendu.')
   methods=v.get('withdrawal_methods',s.get('withdrawal_methods',['mobile_money','bank_transfer']))
   if not isinstance(methods,list) or not methods or len(methods)>3 or any(m not in ('mobile_money','bank_transfer','paypal') for m in methods):raise ValueError('Choisis au moins un mode de retrait autorisé.')
+  duration=v.get('announcement_duration',s['announcement_duration'])
+  if type(duration)!=int or not 5<=duration<=180:raise ValueError('Durée de défilement entre 5 et 180 secondes.')
+  for field in ('announcement_enabled','announcement_scroll'):
+   if field in v and type(v[field])!=bool:raise ValueError('Option de bandeau invalide.')
+  s.update(announcement_duration=duration,announcement_code=text(v.get('announcement_code',s['announcement_code']),40),announcement_enabled=v.get('announcement_enabled',s['announcement_enabled']),announcement_scroll=v.get('announcement_scroll',s['announcement_scroll']))
   s.update(announcement=text(v.get('announcement',s['announcement']),200),announcement_link=link,commission_percent=percent,withdrawal_min_cents=money(v.get('withdrawal_min_cents',s['withdrawal_min_cents'])),commission_hold_days=max(0,min(365,int(v.get('commission_hold_days',s['commission_hold_days'])))),withdrawal_methods=list(dict.fromkeys(methods)))
   d.save(db,'settings',s);audit(db,user,action,'site');return s
  if action=='campaign_create':

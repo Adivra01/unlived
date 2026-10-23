@@ -240,7 +240,7 @@ class Handler(SimpleHTTPRequestHandler):
         # Do not expose credentials, databases, source tooling, or directory listings.
         if not target.is_relative_to(ROOT) or any(p.startswith('.') for p in relative.parts):self.send_error(404);return
         public_root = len(relative.parts)==1 and relative.suffix in ('.html','.css','.js','.txt','.ico','.svg','.xml') and relative.name not in ('server.py',)
-        public_asset = relative.parts[0]=='assets' and relative.suffix.lower() in ('.png','.jpg','.jpeg','.webp','.svg','.gif','.mp4','.webm','.mp3','.m4a','.wav','.woff','.woff2','.ico')
+        public_asset = relative.parts[0]=='assets' and relative.suffix.lower() in ('.png','.jpg','.jpeg','.webp','.svg','.gif','.mp4','.webm','.mp3','.m4a','.wav','.woff','.woff2','.ico','.js')
         public_locale = len(relative.parts)==2 and relative.parts[0]=='locales' and relative.name in [f'{l}.json' for l in LANGUAGES]
         if not (public_root or public_asset or public_locale) or not target.is_file():self.send_error(404);return
         if route=='/':self.path='/index.html'

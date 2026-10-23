@@ -48,8 +48,14 @@
     loadData();
   }
 
+  let accessVersion=0,authorizedUser=null,clientRedirecting=false;
   async function authorize(user) {
+    const version=++accessVersion;
+    if(!user)return false;
+    if(user.role==='client'){app.hidden=true;loginScreen.hidden=true;if(!clientRedirecting){clientRedirecting=true;location.replace('compte.html#apercu');}return false;}
+    if(user.role==='admin'){if(authorizedUser===user.id&&!app.hidden&&!state.preview)return true;authorizedUser=user.id;showApp(user);return true;}
     const { data, error } = await client.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
+    if(version!==accessVersion)return false;
     if (error || !data) {
       app.hidden = true;
       loginScreen.hidden = false;
@@ -382,7 +388,7 @@
     loginMessage.textContent = 'Connexion en cours…';
     const {data,error} = await client.auth.signInWithPassword({email:$('#login-email').value.trim(),password:$('#login-password').value});
     button.disabled = false;
-    if (error) { loginMessage.textContent = 'Connexion impossible. Vérifie tes identifiants et réessaie.'; return; }
+    if (error) { loginMessage.textContent = error.message||'Connexion impossible. Vérifie tes identifiants et réessaie.'; return; }
     loginMessage.textContent = '';
     await authorize(data.user);
   });
@@ -398,7 +404,8 @@
   }
   client.auth.onAuthStateChange((event,session)=>{
     if(event==='USER_UPDATED'&&session?.user){$('#account-email').textContent=session.user.email;$('#account-avatar').textContent=session.user.email[0].toUpperCase();}
-    if (event === 'SIGNED_OUT') { app.hidden=true;loginScreen.hidden=false;state.products=[];state.orders=[];state.messages=[];state.waitlist=[];state.waitlistFeedback=[];state.activeMessage=null;setSidebar(false); }
+    if(['SIGNED_IN','USER_UPDATED'].includes(event)&&session?.user)authorize(session.user);
+    if (event === 'SIGNED_OUT') { accessVersion++;authorizedUser=null;if(dialog.open)dialog.close();form.reset();app.hidden=true;loginScreen.hidden=false;state.products=[];state.orders=[];state.messages=[];state.waitlist=[];state.waitlistFeedback=[];state.activeMessage=null;setSidebar(false); }
   });
 
   $$('.nav-item[data-view]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.view==='waitlist'){$('#waitlist-response').value=button.dataset.waitlistResponse||'all';renderWaitlist();}openView(button.dataset.view);}));

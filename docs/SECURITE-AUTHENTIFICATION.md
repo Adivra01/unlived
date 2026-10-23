@@ -39,7 +39,7 @@ les messages expirés ou dont le jeton a déjà été invalidé, et réessaie ju
 Une clé d’idempotence stable évite les doubles envois lors des reprises. Les erreurs n’affichent ni clé ni jeton.
 Configuration affiche le nombre d’envois en attente/échec et permet de relancer les échecs.
 
-Sur PHP 8.1 ou supérieur, les requêtes réussies traitent la file après la réponse lorsque FastCGI le permet. Ajouter une
+Sur PHP 8.3 maintenu et à jour, les requêtes réussies traitent la file après la réponse lorsque FastCGI le permet. Ajouter une
 tâche cron chaque minute pour les reprises même en l’absence de visite :
 
 ```sh

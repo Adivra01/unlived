@@ -1,0 +1,18 @@
+.configured-announcement{display:flex;position:relative;align-items:center;min-height:36px;overflow:hidden;padding:0!important;background:#191515;color:#f4f1eb;font:11px/1.5 Arial,sans-serif;letter-spacing:.05em}
+.configured-announcement[hidden]{display:none!important}
+.announcement-viewport{flex:1;min-width:0;overflow:hidden}
+.announcement-track{display:flex;width:max-content;max-width:none}
+.announcement-group{display:flex;flex-shrink:0;align-items:center;justify-content:center;min-width:100vw;box-sizing:border-box;padding:9px 32px}
+.configured-announcement a{color:inherit;text-decoration:none;white-space:nowrap;font:inherit;display:inline-block}
+.configured-announcement a:hover{text-decoration:underline}
+.announcement-code{display:inline-block;border:1px solid #ad9e8a;border-radius:4px;padding:1px 7px;margin-left:12px;font-weight:600}
+.is-scrolling .announcement-track{animation:announcement-scroll var(--announcement-duration,25s) linear infinite}
+.configured-announcement:hover .announcement-track,.configured-announcement:focus-within .announcement-track,.configured-announcement.is-paused .announcement-track{animation-play-state:paused}
+.configured-announcement:not(.is-scrolling) .announcement-track{width:100%}
+.configured-announcement:not(.is-scrolling) .announcement-group{min-width:0;width:100%}
+.configured-announcement:not(.is-scrolling) a{white-space:normal;text-align:center}
+.configured-announcement>button.announcement-pause{flex-shrink:0;align-self:stretch;min-height:36px;min-width:56px;width:auto;padding:5px 10px;border:0;border-left:1px solid #ffffff30;border-radius:0;background:#191515;color:#f4f1eb;font:10px Arial,sans-serif;cursor:pointer}
+.account-announcement{border-radius:9px;margin-bottom:24px}
+.request-count{display:inline-grid;place-items:center;min-width:20px;padding:2px 5px;margin-left:auto;border-radius:20px;background:#7a2e38;color:white;font:11px Arial,sans-serif}
+@keyframes announcement-scroll{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.is-scrolling .announcement-track{animation:none;width:100%}.is-scrolling .announcement-group{min-width:0;width:100%;padding:9px 18px}.is-scrolling .announcement-group[aria-hidden=true]{display:none}.is-scrolling a{white-space:normal;text-align:center}.announcement-pause{display:none!important}}
